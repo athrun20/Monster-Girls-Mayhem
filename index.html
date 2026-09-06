@@ -26,6 +26,17 @@
   }
   @media (min-width: 800px) {
     #app { max-width: min(1180px, 100%); }
+    #hud { padding: 4px 10px 0; }
+    #dock { padding: 8px 12px 10px; }
+  }
+  @media (min-width: 900px) and (min-height: 680px) {
+    #hud { padding: 2px 10px 0; }
+    #dock { padding: 4px 12px 8px; }
+    #board-wrap { padding: 0 4px; min-height: 280px; }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    #hud .chip { transform: scale(0.92); transform-origin: top; }
+    #dock { padding: 4px 10px 6px; }
   }
   .screen {
     display: none; flex-direction: column;
@@ -178,10 +189,12 @@
   .char-preview {
     grid-area: art;
     min-height: 0;
+    max-height: 38vh;
     display: flex; align-items: flex-end; justify-content: center;
+    overflow: hidden;
   }
   .char-preview img#char-big {
-    max-height: 100%; max-width: 100%;
+    max-height: 36vh; max-width: 70%;
     object-fit: contain; object-position: center bottom;
     filter: drop-shadow(0 0 22px rgba(255,45,149,0.35));
     transition: opacity 0.22s ease, transform 0.28s ease;
@@ -284,26 +297,178 @@
   /* BATTLE */
   #s-battle {
     padding: 0;
-    background: #0a0614 center top / cover no-repeat;
+    background: #0a0614 center center / cover no-repeat;
     background-color: #0a0614;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+  }
+  #s-battle.on { display: flex; }
+  #s-battle::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 48%, transparent 32%, rgba(6,2,16,0.35) 100%);
+    z-index: 0;
+  }
+  #s-battle > * { position: relative; z-index: 1; }
+  .side-art { display: none !important; }
+  #fighters {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: transparent; overflow: hidden;
+  }
+  .fighter {
+    position: absolute; bottom: 8%;
+    width: 24%; max-width: 260px; height: 62%;
+    display: none;
+    align-items: flex-end; justify-content: center;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden;
+  }
+  .fighter.on { display: flex; }
+  .fighter.left { left: 0; }
+  .fighter.right { right: 0; }
+  .fighter img {
+    max-width: 100%; max-height: 100%;
+    width: auto; height: 100%;
+    object-fit: contain; object-position: center bottom;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4));
+    transition: opacity 0.12s linear;
+  }
+  .fighter.right img { transform: scaleX(-1); }
+  #board-wrap, #hud, #dock { z-index: 3; }
+  .fighter.charge::after {
+    content: ""; position: absolute; inset: 18% 22% 22%;
+    border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(255,200,80,0.35) 0%, rgba(255,80,0,0.12) 55%, transparent 72%);
+    box-shadow: 0 0 18px rgba(255,120,20,0.35);
+    animation: chargePulse 0.18s ease-out;
+  }
+  @keyframes chargePulse {
+    0% { opacity: 0; transform: scale(0.7); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  #atk-bolt {
+    position: absolute; top: 0; left: 0; width: 16px; height: 16px;
+    margin: 0; border-radius: 50%; pointer-events: none; z-index: 8; opacity: 0;
+    background: radial-gradient(circle, #fff6c8 0%, #ff9a2a 38%, #ff4a00 72%, transparent 78%);
+    box-shadow: 0 0 10px #ff8a20, 0 0 18px #ff3a00;
+    will-change: left, top, opacity;
+  }
+  #atk-bolt.go { opacity: 1; }
+  #atk-bolt.pwr1 { width: 18px; height: 18px; }
+  #atk-bolt.pwr2 { width: 22px; height: 22px; box-shadow: 0 0 14px #ff9a30, 0 0 26px #ff3a00; }
+  #atk-bolt.pwr3 { width: 26px; height: 26px; box-shadow: 0 0 18px #ffe08a, 0 0 32px #ff2a00; }
+  #atk-bolt.pwr4 { width: 32px; height: 32px; box-shadow: 0 0 22px #fff2c0, 0 0 40px #ff1a00; }
+  #atk-trail { position: absolute; inset: 0; pointer-events: none; z-index: 7; overflow: hidden; }
+  #atk-trail i {
+    position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+    background: radial-gradient(circle, #ffd080 0%, #ff4a00 70%, transparent 75%);
+    opacity: 0.55; pointer-events: none;
+  }
+  #atk-hit {
+    position: absolute; top: 38%; width: 54px; height: 54px; margin-left: -27px;
+    border-radius: 50%; pointer-events: none; z-index: 6; opacity: 0;
+    background: radial-gradient(circle, #fff6c8 0%, #ff7a18 40%, transparent 70%);
+    box-shadow: 0 0 18px #ff6a00;
+  }
+  #atk-hit.on { animation: hitBurst 0.32s ease-out forwards; }
+  #atk-hit.on-p1 { left: 14%; }
+  #atk-hit.on-p2 { left: 86%; }
+  @keyframes hitBurst {
+    0% { opacity: 1; transform: scale(0.4); }
+    70% { opacity: 0.85; transform: scale(1.15); }
+    100% { opacity: 0; transform: scale(1.45); }
+  }
+  @media (max-width: 700px) {
+    .fighter { width: 20%; height: 34%; top: 42px; bottom: auto; opacity: 0.9; }
+    .fighter img { height: 100%; }
   }
   #hud {
-    display: flex; justify-content: space-between; gap: 8px;
-    padding: 6px 8px 2px; flex-shrink: 0;
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    padding: 4px 8px 2px; flex-shrink: 0;
+    min-height: 0;
+  }
+  #pause-fab {
+    position: absolute; top: 8px; right: 8px; z-index: 8;
+    width: 36px; height: 36px; border-radius: 10px;
+    border: 1px solid rgba(212,175,55,0.45);
+    background: rgba(10,6,20,0.55); color: #fff; font-size: 0.7rem;
+  }
+  .hidden-ctrl { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  #sp-ready {
+    position: absolute; top: 46px; left: 10px; z-index: 6;
+    font-size: 0.62rem; font-weight: 900; letter-spacing: 0.1em; color: #ffd84a;
+    text-shadow: 0 0 8px #ff2bd6; opacity: 0; pointer-events: none;
+  }
+  #sp-ready.on { opacity: 1; }
+  .hp {
+    width: 76px; height: 5px; background: #1a1020; border-radius: 4px; margin-top: 2px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .hp > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d6d, #ffd84a); transition: width 0.18s ease-out; }
+  .hp > i.hit { filter: brightness(1.45); }
+  #cpu-act {
+    position: absolute; top: 44px; right: 10px; z-index: 6;
+    font-size: 0.62rem; font-weight: 900; letter-spacing: 0.08em;
+    color: #ffd84a; text-shadow: 0 0 8px #ff2bd6;
+    opacity: 0; pointer-events: none;
+    transition: opacity .12s;
+  }
+  #cpu-act.on { opacity: 1; }
+  @media (max-width: 700px) {
+    #arena-title { display: none; }
+    .chip img, .orb { display: none !important; }
+    .chip { padding: 3px 8px !important; }
+    .side-art { display: none !important; }
+    .board-frame { padding: 6px !important; }
+    #dock { padding: 4px 8px 8px !important; }
+  }
+  #arena-title { display: none !important; }
+  #arena-title-off {
+    text-align: center; font-size: 0.52rem; letter-spacing: 0.22em; font-weight: 800;
+    color: #e8d7ff; text-shadow: 0 0 12px #b026ff, 0 1px 0 #2a0a40;
+    line-height: 1.15; pointer-events: none;
+  }
+  #arena-title b {
+    display: block; font-size: 1.05rem; letter-spacing: 0.16em; color: #fff;
+    text-shadow: 0 0 16px #ff2bd6, 0 0 4px #7c3aed;
   }
   .chip {
     display: flex; align-items: center; gap: 6px;
-    background: rgba(8,4,18,0.72); border: 1px solid rgba(0,240,255,0.35);
-    border-radius: 12px; padding: 3px 8px 3px 3px;
+    background: linear-gradient(180deg, rgba(28,14,42,0.88), rgba(8,4,18,0.82));
+    border: 1px solid rgba(212,175,55,0.55);
+    box-shadow: 0 0 10px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+    border-radius: 14px; padding: 4px 8px 4px 4px;
   }
-  .chip img {
-    width: 34px; height: 34px; border-radius: 8px; object-fit: contain; object-position: top;
-  }
-  .chip .meta { font-size: 0.65rem; font-weight: 700; }
+  .chip.p2 { padding: 4px 4px 4px 8px; }
+  .chip img { display: none !important; }
+  .chip .meta { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; }
+  .stat { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+  .stat.rev { flex-direction: row-reverse; }
+  .stat span { font-size: 0.48rem; font-weight: 800; letter-spacing: 0.08em; color: #c4b5fd; width: 14px; }
   .sp {
-    width: 72px; height: 6px; background: #222; border-radius: 4px; margin-top: 3px; overflow: hidden;
+    width: 88px; height: 8px; background: #1a1020; border-radius: 4px; overflow: hidden;
+    border: 1px solid rgba(180,120,255,0.45);
   }
-  .sp > i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--pink)); }
+  .sp > i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #7c3aed, #ff2bd6); }
+  .hp { width: 88px; }
+  .orb { display: none !important; }
+  .orb-off {
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 2px solid rgba(212,175,55,0.7);
+    background: radial-gradient(circle at 35% 30%, #3a2060, #140818);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 0 10px rgba(124,58,237,0.4);
+    flex-shrink: 0;
+  }
+  .orb span { font-size: 0.62rem; font-weight: 900; line-height: 1; color: #fff; }
+  .orb small { font-size: 0.42rem; letter-spacing: 0.08em; color: #d4af37; }
+  .orb.dim { opacity: 0.85; border-color: rgba(160,120,255,0.5); }
+  .chip.aura .orb { box-shadow: 0 0 16px #ffd84a; border-color: #ffd84a; animation: spPulse 0.9s ease-in-out infinite; }
   #incoming {
     flex-shrink: 0; height: 18px; text-align: center;
     font-size: 0.65rem; letter-spacing: 1px; font-weight: 800;
@@ -318,40 +483,89 @@
   }
   #danger-tag.on { opacity: 1; }
   #board-wrap {
-    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+    flex: 1 1 auto; min-height: 220px; display: flex; align-items: center; justify-content: center;
     padding: 2px 6px;
+    overflow: hidden;
   }
+  .board-frame {
+    position: relative;
+    padding: 10px 10px 12px;
+    background:
+      linear-gradient(180deg, rgba(42,22,70,0.55), rgba(12,6,24,0.4));
+    border: 2px solid rgba(212,175,55,0.72);
+    border-radius: 16px;
+    box-shadow:
+      0 0 0 3px rgba(60,20,90,0.65),
+      0 0 22px rgba(176,38,255,0.35),
+      inset 0 0 22px rgba(6,2,16,0.7), inset 0 1px 0 rgba(255,220,160,0.18);
+  }
+  .board-frame::before, .board-frame::after {
+    content: ""; position: absolute; width: 14px; height: 14px;
+    border: 2px solid #d4af37; pointer-events: none;
+  }
+  .board-frame::before { top: 4px; left: 4px; border-right: 0; border-bottom: 0; }
+  .board-frame::after { top: 4px; right: 4px; border-left: 0; border-bottom: 0; }
+  .frame-jewel {
+    position: absolute; left: 50%; width: 12px; height: 12px; margin-left: -6px;
+    background: radial-gradient(circle at 35% 30%, #fff, #7c3aed 45%, #3a1060);
+    border-radius: 50%; box-shadow: 0 0 8px #b026ff;
+    pointer-events: none;
+  }
+  .frame-jewel.top { top: -6px; }
+  .frame-jewel.bot { bottom: -6px; }
   #board {
     display: block;
-    border: 1px solid rgba(0,240,255,0.28);
+    border: 1px solid rgba(124,58,237,0.45);
     border-radius: 8px;
-    background: rgba(10,6,22,0.78);
+    background: rgba(8,4,18,0.88);
     touch-action: none;
   }
   #dock {
     flex-shrink: 0;
     background: transparent;
-    padding: 6px 10px 10px;
+    padding: 10px 12px 14px;
     display: flex; flex-direction: column; align-items: center; gap: 4px;
   }
-  .dock-row { display: flex; gap: 8px; justify-content: center; align-items: center; }
+  .dock-row { display: flex; gap: 12px; justify-content: center; align-items: center; }
   .dbtn {
-    width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--cyan);
-    background: rgba(8,16,28,0.85); color: #fff; font-size: 0.95rem; font-weight: 800;
+    width: 56px; height: 48px; border-radius: 12px;
+    border: 1.5px solid rgba(212,175,55,0.65);
+    background: linear-gradient(180deg, rgba(60,30,90,0.75), rgba(12,6,24,0.88));
+    color: #fff; font-size: 1rem; font-weight: 800;
     cursor: pointer;
+    clip-path: none;
+    box-shadow: 0 0 10px rgba(124,58,237,0.25);
+    padding: 0;
+    touch-action: manipulation;
   }
   .dbtn.wide {
-    width: 72px; border-radius: 22px; border-color: var(--pink); font-size: 0.68rem;
+    width: 56px; font-size: 1.05rem; border-color: #d4af37;
   }
   .dbtn.special {
-    width: auto; min-width: 110px; padding: 0 12px; border-radius: 22px;
-    border-color: var(--yellow); font-size: 0.68rem;
+    width: 56px; min-width: 56px; height: 48px; padding: 0 3px;
+    font-size: 0.58rem; letter-spacing: 0.01em; font-weight: 800;
+    line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    white-space: nowrap; overflow: hidden; text-overflow: clip;
+    clip-path: none;
+    border-color: rgba(212,175,55,0.55);
+    opacity: 0.7;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, rgba(60,30,90,0.75), rgba(12,6,24,0.88));
   }
   .dbtn.special.on {
-    background: linear-gradient(135deg, var(--pink), var(--purple));
-    box-shadow: 0 0 14px rgba(255,45,149,0.6);
+    opacity: 1;
+    background: linear-gradient(135deg, #7c3aed, #ff2bd6);
+    box-shadow: 0 0 16px rgba(255,45,149,0.65);
+    border-color: #ffd84a;
+    animation: spPulse 0.9s ease-in-out infinite;
   }
   .dbtn:active { transform: scale(0.94); }
+  .dock-row.slim { gap: 6px; }
+  .dbtn.tiny { width: 36px; height: 36px; font-size: 0.75rem; opacity: 0.85; }
+  .dbtn.ghost { background: rgba(8,16,28,0.45); font-size: 0.62rem; width: 64px; }
+  .sp > i.ready { animation: spPulse 0.9s ease-in-out infinite; }
+  @keyframes spPulse { 0%,100%{ filter:brightness(1) } 50%{ filter:brightness(1.45) } }
   #pause-ov {
     display: none; position: absolute; inset: 0; z-index: 20;
     background: rgba(8,4,18,0.55); align-items: center; justify-content: center;
@@ -452,42 +666,58 @@
   </div>
 
   <div id="s-battle" class="screen">
+    <img id="side-p1" class="side-art left" alt="" />
+    <img id="side-p2" class="side-art right" alt="" />
+    <div id="fighters" aria-hidden="true">
+      <div class="fighter left" id="ft-p1"><img id="ft-p1img" alt=""></div>
+      <div class="fighter right" id="ft-p2"><img id="ft-p2img" alt=""></div>
+    </div>
+    <div id="atk-trail"></div>
+    <div id="atk-bolt"></div>
+    <div id="atk-hit"></div>
+    <button type="button" id="pause-fab" aria-label="Pause">❚❚</button>
     <div id="hud">
-      <div class="chip">
+      <div class="chip p1">
         <img id="h1img" src="" alt="" />
         <div>
           <div class="meta" id="h1name">P1</div>
-          <div class="sp"><i id="h1sp"></i></div>
+          <div class="stat"><span>HP</span><div class="hp"><i id="h1hp"></i></div></div>
+          <div class="stat"><span>SP</span><div class="sp"><i id="h1sp"></i></div></div>
         </div>
       </div>
-      <div class="chip" id="h2chip" style="display:none;">
+      <div class="chip p2" id="h2chip" style="display:none;">
         <div style="text-align:right;">
           <div class="meta" id="h2name">CPU</div>
-          <div class="sp" style="margin-left:auto;"><i id="h2sp"></i></div>
+          <div class="stat rev"><span>HP</span><div class="hp"><i id="h2hp"></i></div></div>
+          <div class="stat rev"><span>SP</span><div class="sp"><i id="h2sp"></i></div></div>
         </div>
         <img id="h2img" src="" alt="" />
       </div>
     </div>
+    <div id="sp-ready">SPECIAL READY</div>
+    <div id="cpu-act">ATTACK</div>
     <div id="incoming"></div>
     <div id="danger-tag">DANGER</div>
     <div id="chain">CHAIN 2</div>
     <div id="mayhem-tag">MAYHEM!</div>
-    <div id="board-wrap"><canvas id="board" width="300" height="600"></canvas></div>
+    <div id="board-wrap">
+      <div class="board-frame">
+        <div class="frame-jewel top"></div>
+        <canvas id="board" width="300" height="600"></canvas>
+        <div class="frame-jewel bot"></div>
+      </div>
+    </div>
     <div id="dock">
       <div class="dock-row">
-        <button class="dbtn" type="button" id="b-up">▲</button>
-      </div>
-      <div class="dock-row">
-        <button class="dbtn" type="button" id="b-left">◀</button>
-        <button class="dbtn wide" type="button" id="b-swap">SWAP</button>
-        <button class="dbtn" type="button" id="b-right">▶</button>
-      </div>
-      <div class="dock-row">
-        <button class="dbtn" type="button" id="b-down">▼</button>
-        <button class="dbtn wide" type="button" id="b-raise">RAISE</button>
+        <button class="dbtn" type="button" id="b-left" aria-label="Left">◀</button>
+        <button class="dbtn wide" type="button" id="b-swap" aria-label="Swap">◆</button>
+        <button class="dbtn" type="button" id="b-right" aria-label="Right">▶</button>
         <button class="dbtn special" type="button" id="b-special" disabled>SPECIAL</button>
-        <button class="dbtn" type="button" id="b-pause">❚❚</button>
       </div>
+      <button class="dbtn tiny hidden-ctrl" type="button" id="b-up">▲</button>
+      <button class="dbtn tiny hidden-ctrl" type="button" id="b-down">▼</button>
+      <button class="dbtn tiny hidden-ctrl" type="button" id="b-raise">R</button>
+      <button class="dbtn tiny hidden-ctrl" type="button" id="b-pause">❚❚</button>
     </div>
     <div id="pause-ov">
       <h1>PAUSED</h1>
@@ -556,6 +786,11 @@
     im.src = 'assets/garb_' + ['ember','volt','luna','ivy','aqua','shade'][i] + '.png';
     return im;
   });
+  const emberGarbImgs = [0,1,2,3].map(s => {
+    const im = new Image();
+    im.src = 'assets/ember_garb_' + s + '.png';
+    return im;
+  });
 
   const S = {
     screen: 'title', mode: null, diff: 'normal', p1: 0, p2: 1, playerChar: 0, cpuChar: 1,
@@ -619,20 +854,26 @@
     return 1000 + pid * 100 + (charId | 0) * 10 + Math.max(1, Math.min(6, w | 0));
   }
   function unpackG(v) {
-    const x = (v | 0) - 1000;
-    if (x < 0) {
-      const y = (v | 0) - 100;
-      return { charId: Math.floor(y / 10) % 6, w: y % 10 || 1, pid: 0 };
+    const raw = v | 0;
+    if (raw >= 1000) {
+      const x = raw - 1000;
+      const pid = Math.floor(x / 100);
+      const rem = x - pid * 100;
+      return { charId: Math.floor(rem / 10) % 6, w: rem % 10 || 1, pid: pid };
     }
-    return { charId: Math.floor(x / 10) % 6, w: x % 10 || 1, pid: Math.floor(x / 100) };
+    const y = raw - 100;
+    return { charId: Math.floor(y / 10) % 6, w: y % 10 || 1, pid: 0 };
   }
 
   function layout() {
     const wrap = document.getElementById('board-wrap');
     const rect = wrap.getBoundingClientRect();
-    const aw = Math.max(160, rect.width - 8);
-    const ah = Math.max(220, rect.height - 8);
-    panel = Math.max(36, Math.min(78, Math.floor(Math.min(aw / COLS, ah / ROWS))));
+    const aw = Math.max(180, rect.width - 4);
+    const ah = Math.max(240, rect.height - 4);
+    const desk = window.innerWidth >= 900 && window.innerHeight >= 680;
+    const cap = desk ? 110 : 96;
+    const floor = desk ? 48 : 42;
+    panel = Math.max(floor, Math.min(cap, Math.floor(Math.min(aw / COLS, ah / ROWS))));
     W = panel * COLS;
     H = panel * ROWS;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -643,7 +884,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function findMatches(b) {
+  function markMatches(b) {
     const m = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     let any = false;
     for (let r = 0; r < ROWS; r++) {
@@ -668,22 +909,112 @@
         r = r2;
       }
     }
-    // clear garbage touching matches
-    if (any) {
+    return any ? m : null;
+  }
+  function hitsMap(b) {
+    if (b && S.cpu && b === S.cpu) {
+      if (!S.cpuGarbHits) S.cpuGarbHits = {};
+      return S.cpuGarbHits;
+    }
+    if (!S.garbHits) S.garbHits = {};
+    return S.garbHits;
+  }
+  function maxMap(b) {
+    if (b && S.cpu && b === S.cpu) {
+      if (!S.cpuGarbMax) S.cpuGarbMax = {};
+      return S.cpuGarbMax;
+    }
+    if (!S.garbMax) S.garbMax = {};
+    return S.garbMax;
+  }
+  function lastGarbColOf(b) {
+    if (b && S.cpu && b === S.cpu) return S.cpuLastGarbCol;
+    return S.lastGarbCol;
+  }
+  function setLastGarbCol(b, c) {
+    if (b && S.cpu && b === S.cpu) S.cpuLastGarbCol = c;
+    else S.lastGarbCol = c;
+  }
+  function isBreakingPid(pid) {
+    return !!(S.garbBreak && S.garbBreak.some(function (x) { return x.pid === pid; }));
+  }
+  function queueGarbBreak(gv) {
+    const u = unpackG(gv);
+    if (!S.garbBreak) S.garbBreak = [];
+    if (isBreakingPid(u.pid)) return;
+    S.garbBreak.push({ pid: u.pid, gv: gv, t: 150 });
+  }
+  function resolveGarbBreak(force) {
+    if (!S.garbBreak || !S.garbBreak.length || !S.board) return 0;
+    const keep = [];
+    let gems = 0;
+    for (let i = 0; i < S.garbBreak.length; i++) {
+      const br = S.garbBreak[i];
+      if (!force && br.t > 0) { keep.push(br); continue; }
+      const hits = hitsMap(S.board);
+      const maxM = maxMap(S.board);
+      delete hits[br.pid];
+      delete maxM[br.pid];
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-        if (!m[r][c] || isGarb(b[r][c])) continue;
-        [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr, dc]) => {
-          const rr = r + dr, cc = c + dc;
-          if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && isGarb(b[rr][cc])) {
-            const gv = b[rr][cc];
+        const v = S.board[r][c];
+        if (!isGarb(v) || unpackG(v).pid !== br.pid) continue;
+        S.board[r][c] = rollGem(S.board, r, c, true);
+        gems++;
+      }
+    }
+    S.garbBreak = keep;
+    if (gems) {
+      S.cleared += gems;
+      S.sp = Math.min(100, S.sp + gems * 4);
+      setSpUi('p1', S.sp);
+      updateSpecial();
+      beginFall(S.board);
+      S.stop = Math.max(S.stop, 2);
+    }
+    return gems;
+  }
+  function crackAdjacent(b, m) {
+    const hits = hitsMap(b);
+    const seenPid = {};
+    const isPlayerBoard = b === S.board;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!m[r][c] || isGarb(b[r][c])) continue;
+      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dr, dc]) => {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
+        if (!isGarb(b[rr][cc])) return;
+        const gv = b[rr][cc];
+        const u = unpackG(gv);
+        if (seenPid[u.pid]) return;
+        seenPid[u.pid] = true;
+        if (isBreakingPid(u.pid)) return;
+        if (hits[u.pid] == null) hits[u.pid] = 1;
+        if (hits[u.pid] <= 0) {
+          if (isPlayerBoard) queueGarbBreak(gv);
+          return;
+        }
+        hits[u.pid] -= 1;
+        if (hits[u.pid] <= 0) {
+          if (isPlayerBoard) {
+            queueGarbBreak(gv);
+          } else {
+            delete hits[u.pid];
             for (let r2 = 0; r2 < ROWS; r2++) for (let c2 = 0; c2 < COLS; c2++) {
               if (b[r2][c2] === gv) m[r2][c2] = true;
             }
           }
-        });
-      }
+        } else if (isPlayerBoard) {
+          if (!S.garbFx) S.garbFx = [];
+          S.garbFx.push({ c: cc, r: rr, w: Math.max(1, u.w || 2), h: 1, t: 1, crack: true });
+        }
+      });
     }
-    return any ? m : null;
+  }
+  function findMatches(b, applyCrack) {
+    const m = markMatches(b);
+    if (!m) return null;
+    if (applyCrack !== false) crackAdjacent(b, m);
+    return m;
   }
 
   function gravity(b) {
@@ -715,8 +1046,30 @@
     return true;
   }
 
-  function rollGem(b, r, c) {
+  function rollGem(b, r, c, fromGarb) {
     const n = nColors();
+    const neigh = [];
+    const counts = {};
+    [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dr, dc]) => {
+      const rr = r + dr, cc = c + dc;
+      if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
+      const nv = b[rr][cc];
+      if (nv !== null && !isGarb(nv)) {
+        neigh.push(nv);
+        counts[nv] = (counts[nv] || 0) + 1;
+      }
+    });
+    if (fromGarb) {
+      const ripe = [];
+      Object.keys(counts).forEach(k => { if (counts[k] >= 2) ripe.push(+k); });
+      if (ripe.length && Math.random() < 0.72) {
+        return ripe[(Math.random() * ripe.length) | 0];
+      }
+      if (neigh.length && Math.random() < 0.52) {
+        return neigh[(Math.random() * neigh.length) | 0];
+      }
+      return Math.floor(Math.random() * n);
+    }
     let v = Math.floor(Math.random() * n), tries = 0;
     function clash(val) {
       const L = c > 0 ? b[r][c - 1] : null;
@@ -739,19 +1092,28 @@
     return v;
   }
   function clearMatched(b, m) {
-    let n = 0;
+    let n = 0, g = 0;
     const garb = [];
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       if (!m[r][c]) continue;
       if (isGarb(b[r][c])) garb.push([r, c]);
       else { b[r][c] = null; n++; }
     }
+    garb.sort(function (a, c) { return c[0] - a[0] || a[1] - c[1]; });
+    const hits = hitsMap(b);
     for (let i = 0; i < garb.length; i++) {
       const r = garb[i][0], c = garb[i][1];
-      b[r][c] = rollGem(b, r, c);
+      const gv = b[r][c];
+      if (gv != null && isGarb(gv)) {
+        const pid = unpackG(gv).pid;
+        delete hits[pid];
+        delete maxMap(b)[pid];
+      }
+      b[r][c] = rollGem(b, r, c, true);
       n++;
+      g++;
     }
-    return n;
+    return { n: n, g: g };
   }
 
   function queueCap() {
@@ -760,53 +1122,188 @@
   function queuedCount() {
     return (S.pendingIn ? S.pendingIn.length : 0) + (S.incomingHold ? S.incomingHold.length : 0);
   }
-  function buildGarbage(chain, count, charId) {
-    const pieces = [];
-    if (chain <= 1 && count < 4) return pieces;
-    let score = 0;
-    if (count >= 4) score += count - 3;
-    if (chain >= 2) score += (chain - 1) * 3;
-    if (chain >= 4) score += 3;
-    score = Math.min(score, S.diff === 'easy' ? 6 : 10);
-    while (score >= 2 && pieces.length < 2) {
-      let w = 2;
-      if (score >= 9) w = 6;
-      else if (score >= 6) w = 4;
-      else if (score >= 4) w = 3;
-      const h = chain >= 4 && w >= 4 ? 2 : 1;
-      pieces.push({ w, h, charId: garbageOwner() });
-      score -= w * h + 1;
-    }
-    return pieces;
+  function garbPattern(power) {
+    const A = [
+      [{ c: 0, r: 0, w: 2, h: 1 }]
+    ];
+    const B = [
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 1, r: 1, w: 2, h: 1 }],
+      [{ c: 1, r: 0, w: 2, h: 1 }, { c: 0, r: 1, w: 2, h: 1 }],
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 2, r: 0, w: 2, h: 1 }]
+    ];
+    const C = [
+      [{ c: 0, r: 0, w: 2, h: 2 }],
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 2, r: 1, w: 2, h: 1 }],
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 3, r: 0, w: 2, h: 1 }]
+    ];
+    const D = [
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 2, r: 0, w: 2, h: 1 }, { c: 1, r: 1, w: 2, h: 1 }],
+      [{ c: 1, r: 0, w: 2, h: 1 }, { c: 0, r: 1, w: 4, h: 1 }],
+      [{ c: 0, r: 0, w: 4, h: 1 }]
+    ];
+    const E = [
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 3, r: 0, w: 2, h: 1 }, { c: 1, r: 1, w: 2, h: 1 }],
+      [{ c: 0, r: 0, w: 4, h: 1 }, { c: 1, r: 1, w: 2, h: 1 }],
+      [{ c: 1, r: 0, w: 2, h: 1 }, { c: 0, r: 1, w: 2, h: 1 }, { c: 3, r: 1, w: 2, h: 1 }]
+    ];
+    const F = [
+      [{ c: 0, r: 0, w: 4, h: 1 }, { c: 1, r: 1, w: 4, h: 1 }],
+      [{ c: 0, r: 0, w: 2, h: 1 }, { c: 3, r: 0, w: 2, h: 1 }, { c: 1, r: 1, w: 4, h: 1 }],
+      [{ c: 0, r: 0, w: 4, h: 1 }, { c: 0, r: 1, w: 2, h: 1 }, { c: 3, r: 1, w: 2, h: 1 }],
+      [{ c: 0, r: 0, w: 2, h: 2 }, { c: 3, r: 0, w: 2, h: 1 }]
+    ];
+    let pool;
+    if (power <= 1) pool = A;
+    else if (power === 2) pool = B;
+    else if (power === 3) pool = C.concat(B);
+    else if (power === 4) pool = D.concat(C);
+    else if (power <= 6) pool = E.concat(D);
+    else pool = F.concat(E);
+    return pool[(Math.random() * pool.length) | 0];
   }
-
-  function placeGarbage(b, w, h, charId) {
-    w = Math.max(1, Math.min(COLS, w | 0));
-    h = Math.max(1, Math.min(2, h | 0));
-    const val = packG(charId, w);
-    for (let r0 = ROWS - h; r0 >= 0; r0--) {
-      for (let c0 = 0; c0 <= COLS - w; c0++) {
-        let clear = true;
-        for (let rr = 0; rr < h && clear; rr++)
-          for (let cc = 0; cc < w; cc++)
-            if (b[r0 + rr][c0 + cc] !== null) { clear = false; break; }
-        if (!clear) continue;
-        let rest = (r0 + h >= ROWS);
-        if (!rest) {
-          for (let cc = 0; cc < w; cc++) if (b[r0 + h][c0 + cc] !== null) rest = true;
-        }
-        if (!rest) continue;
-        for (let rr = 0; rr < h; rr++)
-          for (let cc = 0; cc < w; cc++) b[r0 + rr][c0 + cc] = val;
-        if (b === S.board) {
-          shakeFromGarb(w * h);
-          burstParts((c0 + w / 2) * panel, (r0 + h / 2) * panel, garbageOwner(), 8 + w * 2, 1.1);
-        }
-        return true;
+  function patternSize(pat) {
+    let w = 0, h = 0;
+    for (let i = 0; i < pat.length; i++) {
+      w = Math.max(w, pat[i].c + pat[i].w);
+      h = Math.max(h, pat[i].r + pat[i].h);
+    }
+    return { w: w, h: h };
+  }
+  function colHeight(b, c) {
+    for (let r = 0; r < ROWS; r++) if (b[r][c] !== null) return ROWS - r;
+    return 0;
+  }
+  function playableOk(b) {
+    let free = 0;
+    for (let r = 0; r < 4; r++) for (let c = 0; c < COLS; c++) if (b[r][c] == null) free++;
+    return free >= COLS * 2;
+  }
+  function occupiedOffsets(pat) {
+    const seen = {};
+    const cols = [];
+    for (let i = 0; i < pat.length; i++) {
+      const p = pat[i];
+      for (let k = 0; k < p.w; k++) {
+        const c = p.c + k;
+        if (!seen[c]) { seen[c] = 1; cols.push(c); }
       }
     }
-    for (let c = 0; c < Math.min(w, COLS); c++) if (b[0][c] === null) b[0][c] = val;
+    return cols;
+  }
+  function garbStack(b, c) {
+    let top = -1;
+    for (let r = 0; r < ROWS; r++) if (b[r][c] !== null) { top = r; break; }
+    if (top < 0) return 0;
+    let n = 0;
+    for (let r = top; r < ROWS && isGarb(b[r][c]); r++) n++;
+    return n;
+  }
+  function findPatternCol(b, pat, maxUneven) {
+    const sz = patternSize(pat);
+    const occ = occupiedOffsets(pat);
+    const last = lastGarbColOf(b);
+    const cands = [];
+    for (let c0 = 0; c0 <= COLS - sz.w; c0++) {
+      let mx = 0, mn = 99, sum = 0, gTop = 0;
+      for (let i = 0; i < occ.length; i++) {
+        const ht = colHeight(b, c0 + occ[i]);
+        mx = Math.max(mx, ht);
+        mn = Math.min(mn, ht);
+        sum += ht;
+        gTop += garbStack(b, c0 + occ[i]);
+      }
+      if (mx - mn > maxUneven) continue;
+      if (mx + sz.h > ROWS - 2) continue;
+      let blocked = false;
+      for (let i = 0; i < pat.length && !blocked; i++) {
+        const p = pat[i];
+        const r0 = ROWS - mx - p.h - p.r;
+        if (r0 < 0 || r0 + p.h > ROWS) { blocked = true; break; }
+        for (let rr = 0; rr < p.h && !blocked; rr++) {
+          for (let cc = 0; cc < p.w; cc++) {
+            const r = r0 + rr, c = c0 + p.c + cc;
+            if (c < 0 || c >= COLS || b[r][c] !== null) { blocked = true; break; }
+          }
+        }
+      }
+      if (blocked) continue;
+      let penalty = (mx - mn) * 2.2 + sum * 1.35 + gTop * 8;
+      if (c0 === last) penalty += 12;
+      if (c0 === 0) penalty += 1.5;
+      cands.push({ c0: c0, mx: mx, score: penalty + Math.random() * 1.1 });
+    }
+    if (!cands.length) return null;
+    cands.sort(function (a, b) { return a.score - b.score; });
+    return cands[0];
+  }
+  function placePattern(b, pat, charId) {
+    if (!b || !pat || !pat.length) return false;
+    if (!playableOk(b)) return false;
+    let used = pat;
+    let spot = findPatternCol(b, used, 2);
+    if (!spot) spot = findPatternCol(b, used, 4);
+    if (!spot) {
+      used = [{ c: 0, r: 0, w: 2, h: 1 }];
+      spot = findPatternCol(b, used, 4);
+    }
+    if (!spot) return false;
+    const writes = [];
+    for (let i = 0; i < used.length; i++) {
+      const p = used[i];
+      const r0 = ROWS - spot.mx - p.h - p.r;
+      const c0 = spot.c0 + p.c;
+      if (r0 < 0 || c0 < 0 || r0 + p.h > ROWS || c0 + p.w > COLS) return false;
+      for (let rr = 0; rr < p.h; rr++) for (let cc = 0; cc < p.w; cc++) {
+        if (b[r0 + rr][c0 + cc] !== null) return false;
+      }
+      writes.push({ r0: r0, c0: c0, p: p });
+    }
+    setLastGarbCol(b, spot.c0);
+    const hits = hitsMap(b);
+    let cells = 0, cx = 0, cy = 0;
+    for (let i = 0; i < writes.length; i++) {
+      const wri = writes[i];
+      const p = wri.p;
+      const val = packG(charId, p.w);
+      const pid = unpackG(val).pid;
+      const area = p.w * p.h;
+      const hp = area <= 2 ? 1 : (area <= 4 ? 2 : 3);
+      hits[pid] = hp;
+      maxMap(b)[pid] = hp;
+      for (let rr = 0; rr < p.h; rr++) for (let cc = 0; cc < p.w; cc++) {
+        b[wri.r0 + rr][wri.c0 + cc] = val;
+        cells++;
+        cx += wri.c0 + cc;
+        cy += wri.r0 + rr;
+      }
+    }
+    if (b === S.board && cells) {
+      shakeFromGarb(cells);
+      burstParts((cx / cells + 0.5) * panel, (cy / cells + 0.5) * panel, garbageOwner(), 8 + cells, 1.1);
+    }
     return true;
+  }
+  function buildGarbage(chain, count, charId) {
+    let power = 0;
+    if (count >= 6) power = 4;
+    else if (count >= 5) power = 3;
+    else if (count >= 4) power = 2;
+    else if (count >= 3) power = 1;
+    if (chain >= 2) power += 2 + (chain - 2) * 2;
+    if (chain >= 5) power += 2;
+    if (S.diff === 'easy') power = Math.min(power, 4);
+    else if (S.diff === 'hard') power = Math.min(power, 9);
+    else power = Math.min(power, 7);
+    if (power < 1) return [];
+    const pat = garbPattern(power);
+    const sz = patternSize(pat);
+    return [{ pat: pat, w: sz.w, h: sz.h, charId: charId, power: power }];
+  }
+
+  function placeGarbage(b, piece) {
+    if (!piece) return false;
+    if (piece.pat) return placePattern(b, piece.pat, piece.charId);
+    return placePattern(b, [{ c: 0, r: 0, w: piece.w || 2, h: piece.h || 1 }], piece.charId);
   }
 
   function raise(b) {
@@ -819,6 +1316,9 @@
       while (tries < 10 && c >= 2 && b[ROWS - 1][c - 1] === v && b[ROWS - 1][c - 2] === v);
       b[ROWS - 1][c] = v;
     }
+    /* Grid shifts toward row 0; keep cursor on the same gems. */
+    if (b === S.board) S.cur.r = Math.max(0, Math.min(ROWS - 1, (S.cur.r | 0) - 1));
+    if (b === S.cpu && S.cpuCur) S.cpuCur.r = Math.max(0, Math.min(ROWS - 1, (S.cpuCur.r | 0) - 1));
     return true;
   }
 
@@ -833,31 +1333,51 @@
       spawnPops(b, m);
       spawnTrail(m);
     }
-    const count = clearMatched(b, m);
+    const cleared = clearMatched(b, m);
+    const count = cleared.n;
+    const garbN = cleared.g || 0;
     if (isPlayer) beginFall(b);
     else gravity(b);
     if (isPlayer) {
       S.cleared += count;
       S.chain++;
       if (S.chain > S.maxChain) S.maxChain = S.chain;
-      S.sp = Math.min(100, S.sp + 6 + S.chain * 5);
-      document.getElementById('h1sp').style.width = S.sp + '%';
+      S.sp = Math.min(100, S.sp + 4 + Math.min(6, count) + S.chain * 6 + garbN * 4);
+      setSpUi('p1', S.sp);
       updateSpecial();
       if (S.chain >= 2) showChain(S.chain);
-      S.stop = Math.max(S.stop, 12 + S.chain * 8);
+      const breaking = S.garbBreak && S.garbBreak.length;
+      S.stop = Math.max(S.stop, breaking ? 2 : (12 + S.chain * 8));
       if (S.cpu) {
         const pieces = buildGarbage(S.chain, count, garbageOwner());
-        if (pieces.length) S.pendingOut.push(...pieces);
+        if (pieces.length) {
+          const cap = S.diff === 'hard' ? 3 : 2;
+          S.pendingOut.push(...pieces.slice(0, Math.max(0, cap - S.pendingOut.length)));
+        }
+        if (count >= 3 || S.chain >= 2) {
+          launchAttack(false, count, S.chain, false);
+          if (S.chain >= 4 && Math.random() < 0.2) {
+            S.pNextPose = 'TAUNT';
+            S.pNextHold = 480;
+          }
+        }
       }
       sfx(S.chain >= 2 ? 'chain' : (count >= 4 ? 'big' : 'match'));
     } else {
       S.cpuChain++;
-      S.cpuSp = Math.min(100, S.cpuSp + 5 + S.cpuChain * 4);
-      document.getElementById('h2sp').style.width = S.cpuSp + '%';
+      S.cpuSp = Math.min(100, S.cpuSp + 3 + Math.min(5, count) + S.cpuChain * 5 + garbN * 3);
+      setSpUi('cpu', S.cpuSp);
       S.cpuStop = Math.max(S.cpuStop, 10 + S.cpuChain * 7);
       const pieces = buildGarbage(S.cpuChain, count, garbageOwner());
       const room = Math.max(0, queueCap() - queuedCount());
       if (pieces.length && room > 0) S.pendingIn.push(...pieces.slice(0, room));
+      if (S.cpuChain >= 2 || count >= 3) {
+        launchAttack(true, count, S.cpuChain, false);
+        if (S.cpuChain >= 4 && Math.random() < 0.22) {
+          S.cpuNextPose = 'TAUNT';
+          S.cpuNextHold = 480;
+        }
+      }
     }
     return true;
   }
@@ -870,7 +1390,7 @@
       const g = actx.createGain();
       o.connect(g); g.connect(actx.destination);
       const now = actx.currentTime;
-      const map = { move: [520, 0.03], swap: [340, 0.05], match: [620, 0.07], big: [480, 0.1], chain: [880, 0.12], garb: [180, 0.14], spec: [240, 0.18], danger: [140, 0.16] };
+      const map = { move: [520, 0.03], swap: [340, 0.05], match: [620, 0.07], big: [480, 0.1], chain: [880, 0.12], garb: [180, 0.14], spec: [240, 0.18], danger: [140, 0.16], atk: [420, 0.09], hit: [160, 0.11], charge: [300, 0.06] };
       const [freq, dur] = map[kind] || [400, 0.05];
       o.type = kind === 'garb' || kind === 'danger' ? 'sawtooth' : 'square';
       o.frequency.setValueAtTime(freq, now);
@@ -909,6 +1429,253 @@
     showChain._t = setTimeout(() => el.classList.remove('show'), n >= 4 ? 700 : 480);
   }
 
+  function setMood(who, mood) {
+    if (who === 'cpu') S.cpuMood = mood;
+    else S.pMood = mood;
+  }
+  const EMBER_POSES = {
+    IDLE: 'assets/ember/idle.png',
+    WINNING: 'assets/ember/winning.png',
+    ATTACKING: 'assets/ember/attacking.png',
+    HURT: 'assets/ember/hurt.png',
+    DANGER: 'assets/ember/danger.png',
+    SPECIAL_READY: 'assets/ember/special.png',
+    VICTORY: 'assets/ember/victory.png',
+    DEFEAT: 'assets/ember/defeat.png',
+    TAUNT: 'assets/ember/taunt.png'
+  };
+  function charIdOf(who) {
+    if (who === 'cpu') return (S.cpuChar != null ? S.cpuChar : S.p2) | 0;
+    return (S.playerChar != null ? S.playerChar : S.p1) | 0;
+  }
+  function sideSp(who) {
+    return who === 'cpu' ? (S.cpuSp | 0) : (S.sp | 0);
+  }
+  function persistPose(who) {
+    if (S.over) {
+      if (who === 'cpu') return S.won ? 'DEFEAT' : 'VICTORY';
+      return S.won ? 'VICTORY' : 'DEFEAT';
+    }
+    if (sideSp(who) >= 100) return 'SPECIAL_READY';
+    const danger = who === 'cpu' ? !!S.cpuDanger : !!S.pDanger;
+    if (danger) return 'DANGER';
+    return 'IDLE';
+  }
+  function applyPose(who, pose) {
+    if (charIdOf(who) !== 0) return;
+    const img = document.getElementById(who === 'cpu' ? 'ft-p2img' : 'ft-p1img');
+    const box = document.getElementById(who === 'cpu' ? 'ft-p2' : 'ft-p1');
+    if (!img || !box) return;
+    const src = EMBER_POSES[pose] || EMBER_POSES.IDLE;
+    if (img.getAttribute('data-pose') !== pose) {
+      img.src = src;
+      img.setAttribute('data-pose', pose);
+    }
+    box.classList.add('on');
+  }
+  function setPose(who, pose, hold, nextPose, nextHold) {
+    if (charIdOf(who) !== 0) return;
+    if (who === 'cpu') {
+      S.cpuPose = pose;
+      S.cpuPoseHold = hold || 0;
+      S.cpuNextPose = nextPose || null;
+      S.cpuNextHold = nextHold || 0;
+    } else {
+      S.pPose = pose;
+      S.pPoseHold = hold || 0;
+      S.pNextPose = nextPose || null;
+      S.pNextHold = nextHold || 0;
+    }
+    setMood(who, pose);
+    applyPose(who, pose);
+  }
+  function tickPoses(dt) {
+    [['p1','pPoseHold','pNextPose','pNextHold'],['cpu','cpuPoseHold','cpuNextPose','cpuNextHold']].forEach(([who, key, nk, hk]) => {
+      if ((S[key] || 0) > 0) {
+        S[key] -= dt;
+        if (S[key] <= 0) {
+          S[key] = 0;
+          const nxt = S[nk];
+          S[nk] = null;
+          if (nxt) setPose(who === 'cpu' ? 'cpu' : 'p1', nxt, S[hk] || 420);
+          else applyPose(who === 'cpu' ? 'cpu' : 'p1', persistPose(who === 'cpu' ? 'cpu' : 'p1'));
+        }
+      }
+    });
+  }
+  function showFighters() {
+    const a = document.getElementById('ft-p1');
+    const b = document.getElementById('ft-p2');
+    if (a) a.classList.toggle('on', charIdOf('p1') === 0);
+    if (b) b.classList.toggle('on', S.mode !== 'training' && charIdOf('cpu') === 0);
+    if (charIdOf('p1') === 0) applyPose('p1', persistPose('p1'));
+    if (S.mode !== 'training' && charIdOf('cpu') === 0) applyPose('cpu', persistPose('cpu'));
+  }
+  function setHpUi(who, n) {
+    n = Math.max(0, Math.min(100, n | 0));
+    const bar = document.getElementById(who === 'cpu' ? 'h2hp' : 'h1hp');
+    if (bar) {
+      bar.style.width = n + '%';
+      bar.classList.remove('hit');
+      void bar.offsetWidth;
+      bar.classList.add('hit');
+    }
+  }
+  function combatDmg(count, chain, special) {
+    if (special) return 30;
+    if ((chain || 0) >= 5) return 16;
+    if ((chain || 0) >= 4) return 14;
+    if ((chain || 0) >= 3) return 11;
+    if ((chain || 0) >= 2) return 8;
+    if ((count || 0) >= 6) return 9;
+    if ((count || 0) >= 5) return 7;
+    if ((count || 0) >= 4) return 5;
+    return 0;
+  }
+  function combatPower(count, chain, special) {
+    if (special) return 4;
+    if ((chain || 0) >= 4) return 3;
+    if ((chain || 0) >= 3 || (count || 0) >= 6) return 2;
+    if ((chain || 0) >= 2 || (count || 0) >= 5) return 1;
+    return 0;
+  }
+  function applyDamage(who, amt) {
+    if (S.mode === 'training' || S.over || amt <= 0) return;
+    if (who === 'cpu') {
+      S.cpuHp = Math.max(0, (S.cpuHp == null ? 100 : S.cpuHp) - amt);
+      setHpUi('cpu', S.cpuHp);
+      if (S.cpuHp <= 22) S.cpuDanger = true;
+      if (S.cpuHp <= 0) endGame(true);
+    } else {
+      S.pHp = Math.max(0, (S.pHp == null ? 100 : S.pHp) - amt);
+      setHpUi('p1', S.pHp);
+      if (S.pHp <= 22) S.pDanger = true;
+      if (S.pHp <= 0) endGame(false);
+    }
+  }
+  function hitBurst(who) {
+    const el = document.getElementById('atk-hit');
+    if (!el) return;
+    el.classList.remove('on', 'on-p1', 'on-p2');
+    void el.offsetWidth;
+    el.classList.add('on', who === 'cpu' ? 'on-p2' : 'on-p1');
+    sfx('hit');
+  }
+    function battleBox() {
+    const el = document.getElementById('s-battle');
+    return el ? el.getBoundingClientRect() : { left: 0, top: 0, width: 1, height: 1 };
+  }
+  function fighterAnchor(who) {
+    const id = who === 'cpu' ? 'ft-p2' : 'ft-p1';
+    const el = document.getElementById(id);
+    const box = battleBox();
+    if (!el) {
+      return {
+        x: who === 'cpu' ? box.width * 0.86 : box.width * 0.14,
+        y: box.height * 0.48
+      };
+    }
+    const r = el.getBoundingClientRect();
+    return {
+      x: r.left - box.left + r.width * (who === 'cpu' ? 0.42 : 0.58),
+      y: r.top - box.top + r.height * 0.42
+    };
+  }
+  function sparkTrail(x, y, pwr) {
+    const host = document.getElementById('atk-trail');
+    if (!host) return;
+    const n = 1 + (pwr || 0);
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement('i');
+      d.style.left = (x + (Math.random() * 10 - 5)) + 'px';
+      d.style.top = (y + (Math.random() * 8 - 4)) + 'px';
+      d.style.width = d.style.height = (5 + (pwr || 0)) + 'px';
+      host.appendChild(d);
+      setTimeout(() => { if (d.parentNode) d.parentNode.removeChild(d); }, 220);
+    }
+    while (host.childNodes.length > 18) host.removeChild(host.firstChild);
+  }
+  function fireBolt(fromCpu, heavy, pwr, onDone) {
+    const el = document.getElementById('atk-bolt');
+    if (!el) { if (onDone) onDone(); return; }
+    const power = pwr != null ? pwr : (heavy ? 3 : 0);
+    const src = fighterAnchor(fromCpu ? 'cpu' : 'p1');
+    const dst = fighterAnchor(fromCpu ? 'p1' : 'cpu');
+    const size = 16 + power * 4;
+    el.className = 'go' + (power > 0 ? ' pwr' + Math.min(4, power) : '');
+    el.id = 'atk-bolt';
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.opacity = '1';
+    const dur = power >= 4 ? 360 : power >= 2 ? 300 : 260;
+    const t0 = performance.now();
+    sfx(power >= 3 ? 'spec' : 'atk');
+    let lastSpark = 0;
+    function step(now) {
+      const u = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - u, 3);
+      const x = src.x + (dst.x - src.x) * e;
+      const y = src.y + (dst.y - src.y) * e + Math.sin(u * Math.PI) * -12;
+      el.style.left = (x - size / 2) + 'px';
+      el.style.top = (y - size / 2) + 'px';
+      if (now - lastSpark > 32) {
+        sparkTrail(x, y, power);
+        lastSpark = now;
+      }
+      if (u < 1) requestAnimationFrame(step);
+      else {
+        el.style.opacity = '0';
+        if (onDone) onDone();
+      }
+    }
+    el.style.left = (src.x - size / 2) + 'px';
+    el.style.top = (src.y - size / 2) + 'px';
+    requestAnimationFrame(step);
+  }
+  function launchAttack(fromCpu, count, chain, special) {
+    const dmg = combatDmg(count, chain, special);
+    const pwr = combatPower(count, chain, special);
+    if (!special && dmg <= 0) return;
+    const atk = fromCpu ? 'cpu' : 'p1';
+    const vic = fromCpu ? 'p1' : 'cpu';
+    const box = document.getElementById(atk === 'cpu' ? 'ft-p2' : 'ft-p1');
+    if (special) setPose(atk, 'ATTACKING', 900);
+    else if ((count || 0) >= 4 || (chain || 0) >= 2) setPose(atk, 'WINNING', 180, 'ATTACKING', 520);
+    else setPose(atk, 'ATTACKING', 520);
+    if (box) {
+      box.classList.add('charge');
+      setTimeout(() => box.classList.remove('charge'), 200);
+    }
+    sfx('charge');
+    if (fromCpu) flashCpuAct((chain >= 2 ? 'CHAIN ' + chain + '  ' : '') + (special ? 'SPECIAL!' : 'ATTACK!'));
+    S.pendingHit = { vic: vic, dmg: dmg, special: !!special };
+    const go = () => {
+      fireBolt(fromCpu, pwr >= 3, pwr, () => {
+        if (!S.pendingHit) return;
+        const hit = S.pendingHit;
+        S.pendingHit = null;
+        if (S.over) return;
+        hitBurst(hit.vic);
+        setPose(hit.vic, 'HURT', 360);
+        applyDamage(hit.vic, hit.dmg);
+        if (hit.special) pulseShake(2.4);
+      });
+    };
+    setTimeout(go, special ? 160 : 150);
+    if ((chain || 0) >= 3 || special) pulseShake(special ? 3.6 : (chain >= 4 ? 2.4 : 1.2));
+  }
+function flashCpuAct(label) {
+    const el = document.getElementById('cpu-act');
+    if (!el) return;
+    el.textContent = label || 'ATTACK!';
+    el.classList.add('on');
+    setMood('cpu', 'ATTACKING');
+    clearTimeout(flashCpuAct._t);
+    flashCpuAct._t = setTimeout(() => {
+      el.classList.remove('on');
+      if (S.cpuMood === 'ATTACKING') setMood('cpu', 'IDLE');
+    }, 520);
+  }
   function flashIncoming(pieces) {
     const el = document.getElementById('incoming');
     if (!el || !pieces || !pieces.length) return;
@@ -930,7 +1697,7 @@
     }
     if (S.incomingHold && S.incomingWait <= 0) {
       const p = S.incomingHold.shift();
-      if (p) placeGarbage(S.board, p.w, p.h, p.charId);
+      if (p) placeGarbage(S.board, p);
       if (S.incomingHold.length) {
         flashIncoming(S.incomingHold);
         S.incomingWait = 40;
@@ -951,7 +1718,7 @@
     }
     if (S.pendingOut.length && S.cpu && S.cpuStop <= 0) {
       const pieces = S.pendingOut.splice(0);
-      pieces.forEach(p => placeGarbage(S.cpu, p.w, p.h, p.charId));
+      pieces.forEach(p => placeGarbage(S.cpu, p));
       S.cpuStop = Math.max(S.cpuStop, 16);
     }
   }
@@ -960,6 +1727,10 @@
     const c = cur.c, r = cur.r;
     if (c < 0 || c >= COLS - 1 || r < 0 || r >= ROWS) return false;
     const a = b[r][c], d = b[r][c + 1];
+    if (isGarb(a) || isGarb(d)) {
+      if (b === S.board) sfx('garb');
+      return false;
+    }
     b[r][c] = d; b[r][c + 1] = a;
     gravity(b);
     return true;
@@ -969,6 +1740,7 @@
     if (S.screen !== 'battle' || S.over || S.paused) return;
     S.cur.c = Math.max(0, Math.min(COLS - 2, S.cur.c + dc));
     S.cur.r = Math.max(0, Math.min(ROWS - 1, S.cur.r + dr));
+    S.curFlash = 1;
     sfx('move');
     draw();
   }
@@ -1005,14 +1777,15 @@
 
   function fireSpecial(isPlayer) {
     if (S.over) return;
-    if (isPlayer && S.sp >= 100) {
+    if (isPlayer && (S.sp | 0) >= 100) {
       pulseShake(5.4);
       burstParts(W / 2, H * 0.45, garbageOwner(), 20, 1.6);
       sfx('spec');
-    }
-    if (!isPlayer && S.cpuSp >= 100) {
+      launchAttack(false, 8, 4, true);
+    } else if (!isPlayer && (S.cpuSp | 0) >= 100) {
       pulseShake(3.6);
       burstParts(W / 2, H * 0.35, garbageOwner(), 14, 1.3);
+      launchAttack(true, 8, 4, true);
     }
     const b = isPlayer ? S.board : S.cpu;
     if (!b) return;
@@ -1020,12 +1793,12 @@
     if (isPlayer) {
       if (S.sp < 100) return;
       S.sp = 0;
-      document.getElementById('h1sp').style.width = '0%';
+      setSpUi('p1', 0);
       updateSpecial();
     } else {
       if (S.cpuSp < 100) return;
       S.cpuSp = 0;
-      document.getElementById('h2sp').style.width = '0%';
+      setSpUi('cpu', 0);
     }
     switch (id) {
       case 0: clearGarb(b); clearRandom(b, 5); break;
@@ -1052,20 +1825,45 @@
     draw();
   }
 
+  function setSpUi(who, pct) {
+    const n = Math.max(0, Math.min(100, pct | 0));
+    const bar = document.getElementById(who === 'cpu' ? 'h2sp' : 'h1sp');
+    const lab = document.getElementById(who === 'cpu' ? 'orb-p2n' : 'orb-p1n');
+    if (bar) bar.style.width = n + '%';
+    if (lab) lab.textContent = String(n);
+    if (n >= 100) {
+      if (who === 'cpu' && (S.cpuPoseHold || 0) <= 0) setPose('cpu', 'SPECIAL_READY', 0);
+      if (who !== 'cpu' && (S.pPoseHold || 0) <= 0) setPose('p1', 'SPECIAL_READY', 0);
+    }
+  }
   function updateSpecial() {
     const btn = document.getElementById('b-special');
     const chip = document.querySelector('#hud .chip');
+    const bar = document.getElementById('h1sp');
     if (S.sp >= 100 && !S.over && S.screen === 'battle') {
       btn.disabled = false;
       btn.classList.add('on');
-      btn.textContent = 'SPECIAL READY';
+      btn.textContent = 'SPECIAL';
+      btn.style.display = '';
       if (chip) chip.classList.add('aura');
-      reactHud('p1');
+      if (bar) bar.classList.add('ready');
+      const ready = document.getElementById('sp-ready');
+      if (ready) ready.classList.add('on');
+      if (!S.spReadyLatched) {
+        S.spReadyLatched = true;
+        sfx('spec');
+        reactHud('p1');
+        if ((S.pPoseHold || 0) <= 0) setPose('p1', 'SPECIAL_READY', 0);
+      }
     } else {
       btn.disabled = true;
       btn.classList.remove('on');
       btn.textContent = 'SPECIAL';
       if (chip) chip.classList.remove('aura');
+      if (bar) bar.classList.remove('ready');
+      S.spReadyLatched = false;
+      const ready = document.getElementById('sp-ready');
+      if (ready) ready.classList.remove('on');
     }
   }
 
@@ -1074,12 +1872,25 @@
     const a = board[r][c], b = board[r][c + 1];
     if (a == null || b == null || isGarb(a) || isGarb(b)) return 0;
     board[r][c] = b; board[r][c + 1] = a;
-    const hit = findMatches(board);
+    const hit = findMatches(board, false);
     board[r][c] = a; board[r][c + 1] = b;
     if (!hit) return 0;
-    let n = 0;
-    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (hit[y][x]) n++;
-    return n;
+    let n = 0, bonus = 0;
+    const seen = {};
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      if (!hit[y][x]) continue;
+      n++;
+      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dr, dc]) => {
+        const rr = y + dr, cc = x + dc;
+        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
+        if (!isGarb(board[rr][cc])) return;
+        const pid = unpackG(board[rr][cc]).pid;
+        if (seen[pid]) return;
+        seen[pid] = 1;
+        bonus += 2;
+      });
+    }
+    return n + bonus;
   }
   function persona() {
     const id = garbageOwner();
@@ -1151,6 +1962,8 @@
   function endGame(won) {
     S.over = true;
     S.won = won;
+    setPose('p1', won ? 'VICTORY' : 'DEFEAT', 99999);
+    setPose('cpu', won ? 'DEFEAT' : 'VICTORY', 99999);
     document.getElementById('ko-title').textContent = won ? 'YOU WIN!' : 'K.O.!';
     document.getElementById('ko-title').style.color = won ? '#39ff14' : varPink();
     document.getElementById('ko-sub').textContent = won ? 'Opponent topped out' : 'Stack reached the top';
@@ -1221,8 +2034,60 @@
     { a:'#042433', b:'#22d3ee', c:'#e0f2fe', mark:'◇' },
     { a:'#120816', b:'#7c3aed', c:'#e9d5ff', mark:'✦' }
   ];
+  function garbStateAt(c, r) {
+    const v = S.board && S.board[r] && S.board[r][c];
+    if (isGarb(v)) {
+      const u = unpackG(v);
+      if (isBreakingPid(u.pid)) return 3;
+      const life = S.garbHits ? S.garbHits[u.pid] : null;
+      const maxh = (S.garbMax && S.garbMax[u.pid]) || life;
+      if (life != null && life <= 0) return 3;
+      if (life == null || maxh == null || life >= maxh) {
+        /* fall through to garbFx overlay */
+      } else if (life / maxh > 0.5) return 1;
+      else return 2;
+    }
+    if (S.garbFx) {
+      for (let i = 0; i < S.garbFx.length; i++) {
+        const f = S.garbFx[i];
+        if (c >= f.c && c < f.c + f.w && r >= f.r && r < f.r + f.h) {
+          if (f.t > 0.66) return 1;
+          if (f.t > 0.33) return 2;
+          return 3;
+        }
+      }
+    }
+    return 0;
+  }
+  function drawEmberUnit(c, r, w, h, off, state) {
+    const x = c * panel + 1, y = r * panel - off + 1;
+    const tw = w * panel - 2, th = h * panel - 2;
+    const im = emberGarbImgs[state] || emberGarbImgs[0];
+    ctx.save();
+    if (im && im.complete && im.naturalWidth) {
+      ctx.drawImage(im, x, y, tw, th);
+    } else {
+      const mat = GMAT[0];
+      round(x, y, tw, th, 5);
+      ctx.fillStyle = mat.b;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
   function drawGarbBlock(c0, r0, bw, bh, v, off) {
     const charId = garbageOwner();
+    const uw = 2, uh = 1;
+    if (charId === 0) {
+      for (let rr = 0; rr < bh; rr += uh) {
+        for (let cc = 0; cc < bw; ) {
+          const w = Math.min(uw, bw - cc);
+          const h = Math.min(uh, bh - rr);
+          drawEmberUnit(c0 + cc, r0 + rr, w, h, off, garbStateAt(c0 + cc, r0 + rr));
+          cc += w;
+        }
+      }
+      return;
+    }
     const mat = GMAT[charId] || GMAT[5];
     const x = c0 * panel + 1, y = r0 * panel - off + 1;
     const tw = bw * panel - 2, th = bh * panel - 2;
@@ -1237,11 +2102,7 @@
     ctx.clip();
     ctx.globalAlpha = 0.28;
     ctx.fillStyle = mat.c;
-    for (let i = 0; i < bw + bh; i++) {
-      ctx.fillRect(x + i * 11 - 6, y, 3, th);
-    }
-    ctx.globalAlpha = 0.18;
-    ctx.fillRect(x, y, tw, Math.max(3, th * 0.28));
+    for (let i = 0; i < bw + bh; i++) ctx.fillRect(x + i * 11 - 6, y, 3, th);
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = mat.c;
     ctx.font = 'bold ' + Math.max(10, Math.min(tw, th) * 0.42) + 'px sans-serif';
@@ -1253,11 +2114,6 @@
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.85;
     round(x, y, tw, th, 5);
-    ctx.stroke();
-    ctx.globalAlpha = 0.35;
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1;
-    round(x + 2, y + 2, tw - 4, th - 4, 4);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -1362,6 +2218,34 @@
     if (S.parts.length > 180) S.parts.splice(0, S.parts.length - 180);
     S.fx._combo = n;
     shakeFromMatch(n, S.chain || 1);
+    if (S.fx.some(p => p.garb)) {
+      if (!S.garbFx) S.garbFx = [];
+      const seen = {};
+      for (const p of S.fx) {
+        if (!p.garb) continue;
+        const key = p.r + ',' + Math.floor(p.c / 2) * 2;
+        if (seen[key]) continue;
+        seen[key] = 1;
+        S.garbFx.push({ c: Math.floor(p.c / 2) * 2, r: p.r, w: 2, h: 1, t: 1 });
+      }
+    }
+    if (n >= 4) {
+      let sx = 0, sy = 0, k = 0;
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        if (!m[r][c] || isGarb(b[r][c])) continue;
+        sx += c; sy += r; k++;
+      }
+      if (k) {
+        if (!S.floats) S.floats = [];
+        S.floats.push({
+          x: (sx / k + 0.5) * panel,
+          y: (sy / k) * panel,
+          n: n,
+          t: 1,
+          id: (S.playerChar != null ? S.playerChar : S.p1) | 0
+        });
+      }
+    }
   }
   function drawParticle(p, off) {
     const x = p.x, y = p.y - off;
@@ -1435,6 +2319,31 @@
         ctx.restore();
       }
       S.fx = next;
+    }
+    if (S.garbFx && S.garbFx.length) {
+      S.garbFx = S.garbFx.filter(f => { f.t -= 0.16; return f.t > 0; });
+    }
+    if (S.floats && S.floats.length) {
+      const keepF = [];
+      for (const f of S.floats) {
+        f.t -= 0.035;
+        if (f.t <= 0) continue;
+        keepF.push(f);
+        const pop = f.t > 0.85 ? 0.8 + (1 - f.t) * 2 : 1 + Math.sin(f.t * 8) * 0.04;
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, f.t * 1.4);
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = COLORS[f.id] || '#ffd84a';
+        ctx.lineWidth = 3;
+        ctx.font = '900 ' + Math.round(panel * (0.42 + Math.min(0.2, (f.n - 3) * 0.04)) * pop) + 'px system-ui,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const fy = f.y - off - (1 - f.t) * panel * 0.7;
+        ctx.strokeText(String(f.n), f.x, fy);
+        ctx.fillText(String(f.n), f.x, fy);
+        ctx.restore();
+      }
+      S.floats = keepF;
     }
     if (S.trails && S.trails.length) {
       const keep = [];
@@ -1557,31 +2466,40 @@
       const y = 4 + (1 - Math.min(1, S.incomingWait / 42)) * (panel * 0.4);
       drawGarbBlock(0, 0, w, Math.max(1, h), packG(charId, w), panel - y);
     }
-    // premium 2-cell cursor
-    const cx = S.cur.c * panel, cy = S.cur.r * panel - off;
+    // two-cell cursor: same grid + rise offset as gems
+    const cr = Math.max(0, Math.min(ROWS - 1, S.cur.r | 0));
+    const cc = Math.max(0, Math.min(COLS - 2, S.cur.c | 0));
+    const cx = cc * panel, cy = cr * panel - off;
     const cw = panel * 2, ch = panel;
     const pid = (S.playerChar != null) ? S.playerChar : S.p1;
-    const col = COLORS[pid] || '#fff';
-    const pulse = 0.55 + Math.sin(performance.now() / 180) * 0.25;
+    const col = COLORS[pid] || '#ffe08a';
+    const pulse = 0.62 + Math.sin(performance.now() / 260) * 0.22;
+    if (S.curFlash > 0) S.curFlash -= 0.08;
     ctx.save();
+    const emptyL = !S.board[cr] || S.board[cr][cc] == null;
+    const emptyR = !S.board[cr] || S.board[cr][cc + 1] == null;
+    if (emptyL || emptyR) {
+      ctx.globalAlpha = 0.12 + pulse * 0.08;
+      ctx.fillStyle = col;
+      if (emptyL) ctx.fillRect(cx + 3, cy + 3, panel - 6, ch - 6);
+      if (emptyR) ctx.fillRect(cx + panel + 3, cy + 3, panel - 6, ch - 6);
+    }
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 8 + pulse * 6 + (S.curFlash > 0 ? 8 : 0);
     ctx.strokeStyle = col;
-    ctx.globalAlpha = 0.35 + pulse * 0.25;
-    ctx.lineWidth = 5;
-    round(cx + 1, cy + 1, cw - 2, ch - 2, 7);
-    ctx.stroke();
-    ctx.globalAlpha = 0.95;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#fff';
-    round(cx + 3, cy + 3, cw - 6, ch - 6, 6);
-    ctx.stroke();
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2;
-    const k = 7;
-    const corners = [[cx+4,cy+4,1,1],[cx+cw-4,cy+4,-1,1],[cx+4,cy+ch-4,1,-1],[cx+cw-4,cy+ch-4,-1,-1]];
+    ctx.globalAlpha = 0.55 + pulse * 0.35;
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
-    corners.forEach(([x,y,sx,sy]) => {
+    const inset = 2.5, k = Math.max(6, panel * 0.22);
+    const x0 = cx + inset, y0 = cy + inset, x1 = cx + cw - inset, y1 = cy + ch - inset;
+    [[x0,y0,1,1],[x1,y0,-1,1],[x0,y1,1,-1],[x1,y1,-1,-1]].forEach(([x,y,sx,sy]) => {
       ctx.moveTo(x, y + sy * k); ctx.lineTo(x, y); ctx.lineTo(x + sx * k, y);
     });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.15;
     ctx.stroke();
     ctx.restore();
   }
@@ -1590,6 +2508,7 @@
   function tick(now) {
     const dt = Math.min(40, now - last);
     last = now;
+    if (S.screen === 'battle') tickPoses(dt);
     if (S.screen === 'battle' && S.board && !S.over && !S.paused) {
       if (S.freeze > 0) S.freeze -= dt / 16;
       if (S.stop > 0) S.stop -= dt / 16;
@@ -1601,6 +2520,10 @@
         }
       }
       if (S.landPop > 0) S.landPop = Math.max(0, S.landPop - dt / 120);
+      if (S.garbBreak && S.garbBreak.length) {
+        for (let i = 0; i < S.garbBreak.length; i++) S.garbBreak[i].t -= dt;
+        resolveGarbBreak(false);
+      }
       if (S.fallT > 0 && S.fallY) {
         S.fallT -= dt / 140;
         const tfall = Math.max(0, S.fallT);
@@ -1611,9 +2534,9 @@
         if (S.fallT <= 0) {
           S.fallY = null; S.fallT = 0;
           S.landPop = 1;
-          S.stop = Math.max(S.stop, 4);
+          S.stop = Math.max(S.stop, 2);
         }
-      } else if (S.stop <= 0 && !S.incomingHold) process(S.board, true);
+      } else if (S.stop <= 0 && !S.incomingHold && !(S.garbBreak && S.garbBreak.length)) process(S.board, true);
       if (S.cpu) {
         if (S.cpuFreeze > 0) S.cpuFreeze -= dt / 16;
         if (S.cpuStop > 0) S.cpuStop -= dt / 16;
@@ -1634,8 +2557,20 @@
       const topBusy = S.board[0].some(v => v !== null);
       const dtag = document.getElementById('danger-tag');
       if (dtag) {
-        if (topBusy && !dtag.classList.contains('on')) sfx('danger');
+        if (topBusy && !S.pDanger) { sfx('danger'); }
+        S.pDanger = topBusy;
+        if (S.cpu && S.cpu[0]) S.cpuDanger = S.cpu[0].some(v => v !== null);
+        if ((S.cpuPoseHold || 0) <= 0 && charIdOf('cpu') === 0) applyPose('cpu', persistPose('cpu'));
+        if (topBusy && (S.pPoseHold || 0) <= 0) setPose('p1', persistPose('p1'), 0);
+        else if (!topBusy && (S.pPoseHold || 0) <= 0) setPose('p1', persistPose('p1'), 0);
         dtag.classList.toggle('on', topBusy);
+        const h1 = document.getElementById('h1hp');
+        if (h1) {
+          let filled = 0;
+          for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (S.board[r][c] != null) { filled++; break; }
+          const hp = Math.max(8, Math.round((1 - (ROWS - filled) / ROWS) * 100));
+          h1.style.width = (100 - Math.round(((ROWS - filled) / ROWS) * 70)) + '%';
+        }
       }
       draw();
     }
@@ -1645,12 +2580,13 @@
   function startBattle() {
     S.board = empty();
     seed(S.board, 6);
-    S.cur = { c: 2, r: 8 };
+    S.cur = { c: 2, r: 8 }; S.curFlash = 0;
     S.rising = 0;
     S.riseSpeed = S.mode === 'training' ? 0 : (S.diff === 'easy' ? 0.0016 : S.diff === 'hard' ? 0.004 : 0.0025);
     S.stop = 0; S.chain = 0; S.maxChain = 0; S.cleared = 0; S.sp = 0;
     S.over = false; S.won = false; S.paused = false;
-    S.pendingIn = []; S.pendingOut = []; S.incomingHold = null; S.incomingWait = 0; S.fx = []; S.parts = []; S.trails = []; S.lastClear = null; S.shake = 0; S.fallY = null; S.fallT = 0; S.cascade = false;
+    S.pHp = 100; S.cpuHp = 100; setHpUi('p1', 100); setHpUi('cpu', 100);
+    S.pendingIn = []; S.pendingOut = []; S.incomingHold = null; S.incomingWait = 0; S.fx = []; S.parts = []; S.trails = []; S.lastClear = null; S.shake = 0; S.fallY = null; S.fallT = 0; S.cascade = false; S.floats = []; S.garbFx = []; S.garbBreak = []; S.garbHits = {}; S.cpuGarbHits = {}; S.garbMax = {}; S.cpuGarbMax = {}; S.lastGarbCol = -1; S.cpuLastGarbCol = -1; S.spReadyLatched = false; S.pMood = 'IDLE'; S.cpuMood = 'IDLE';
     S.freeze = 0; S.cpuFreeze = 0;
     S.aiT = 0; S.aiPhase = 'think'; S.aiTarget = null;
 
@@ -1659,7 +2595,14 @@
     const p1 = CHARS[S.p1];
     document.getElementById('h1img').src = p1.img;
     document.getElementById('h1name').textContent = p1.name.toUpperCase();
-    document.getElementById('h1sp').style.width = '0%';
+    setSpUi('p1', 0);
+    const side1 = document.getElementById('side-p1');
+    if (side1) side1.src = p1.img;
+    const o1 = document.getElementById('orb-p1n');
+    if (o1) o1.textContent = '0';
+    S.pPose = 'IDLE'; S.cpuPose = 'IDLE'; S.pPoseHold = 0; S.cpuPoseHold = 0;
+    S.pNextPose = null; S.cpuNextPose = null;
+    S.pDanger = false; S.cpuDanger = false;
 
     if (S.mode === 'story' || S.mode === 'vscpu') {
       S.cpu = empty();
@@ -1669,12 +2612,19 @@
       const p2 = CHARS[S.p2];
       document.getElementById('h2img').src = p2.img;
       document.getElementById('h2name').textContent = p2.name.toUpperCase();
-      document.getElementById('h2sp').style.width = '0%';
+      setSpUi('cpu', 0);
       document.getElementById('h2chip').style.display = 'flex';
+      showFighters();
+      const side2 = document.getElementById('side-p2');
+      if (side2) { side2.src = p2.img; side2.style.display = ''; }
+      const o2 = document.getElementById('orb-p2n');
+      if (o2) o2.textContent = '0';
       document.getElementById('s-battle').style.backgroundImage = 'url("' + (p2.bg || p2.img) + '")';
     } else {
       S.cpu = null;
       document.getElementById('h2chip').style.display = 'none';
+      showFighters();
+      const s2 = document.getElementById('side-p2'); if (s2) s2.removeAttribute('src');
       document.getElementById('s-battle').style.backgroundImage = 'url("' + (p1.bg || p1.img) + '")';
     }
     updateSpecial();
@@ -1892,6 +2842,7 @@
     if (ov) ov.classList.toggle('on', S.paused);
   }
   bind('b-pause', () => { if (S.screen === 'battle' && !S.over) setPaused(!S.paused); });
+  bind('pause-fab', () => { if (S.screen === 'battle' && !S.over) setPaused(!S.paused); });
   document.getElementById('btn-resume').onclick = () => setPaused(false);
   document.getElementById('btn-restart').onclick = () => { setPaused(false); goVs(); };
   document.getElementById('btn-quit').onclick = () => { setPaused(false); show('mode'); };
@@ -1934,6 +2885,54 @@
   });
 
   window.addEventListener('resize', () => { if (S.screen === 'battle') layout(); });
+
+  window.__mgmGarb = {
+    COLS: COLS,
+    ROWS: ROWS,
+    buildGarbage: buildGarbage,
+    garbPattern: garbPattern,
+    placePattern: placePattern,
+    placeGarbage: placeGarbage,
+    packG: packG,
+    unpackG: unpackG,
+    hitsMap: hitsMap,
+    rollGem: rollGem,
+    markMatches: markMatches,
+    findMatches: findMatches,
+    empty: empty,
+    seed: seed,
+    colHeight: colHeight,
+    playableOk: playableOk,
+    getS: function () { return S; },
+    stats: function (b) {
+      b = b || S.board;
+      const colH = [];
+      let garbCells = 0, maxRun = 0;
+      const slabs = {};
+      for (let c = 0; c < COLS; c++) {
+        colH.push(colHeight(b, c));
+        let run = 0;
+        for (let r = 0; r < ROWS; r++) {
+          if (isGarb(b[r][c])) {
+            garbCells++;
+            slabs[unpackG(b[r][c]).pid] = 1;
+            run++;
+            if (run > maxRun) maxRun = run;
+          } else run = 0;
+        }
+      }
+      let topFree = 0;
+      for (let r = 0; r < 4; r++) for (let c = 0; c < COLS; c++) if (b[r][c] == null) topFree++;
+      return {
+        colH: colH,
+        garbCells: garbCells,
+        slabs: Object.keys(slabs).length,
+        maxH: Math.max.apply(null, colH),
+        maxGarbRun: maxRun,
+        topFree: topFree
+      };
+    }
+  };
 
   // Boot
   show('title');
