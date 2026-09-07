@@ -973,8 +973,13 @@
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
         const v = S.board[r][c];
         if (!isGarb(v) || unpackG(v).pid !== br.pid) continue;
-        S.board[r][c] = rollGem(S.board, r, c, true);
+        let gem = rollGem(S.board, r, c, true);
+        if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+        S.board[r][c] = gem;
         gems++;
+      }
+      if (S.garbFx) {
+        S.garbFx = S.garbFx.filter(function () { return true; });
       }
     }
     S.garbBreak = keep;
@@ -1124,7 +1129,9 @@
         delete hits[pid];
         delete maxMap(b)[pid];
       }
-      b[r][c] = rollGem(b, r, c, true);
+      let gem = rollGem(b, r, c, true);
+      if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+      b[r][c] = gem;
       n++;
       g++;
     }
@@ -1143,10 +1150,10 @@
     if (S.mode === 'training') return 0;
     const p = battlePhase();
     const table = S.diff === 'easy'
-      ? [0.0005, 0.00085, 0.0013, 0.0017]
+      ? [0.0016, 0.0020, 0.0025, 0.0030]
       : S.diff === 'hard'
-        ? [0.00085, 0.0014, 0.0022, 0.0032]
-        : [0.00065, 0.0011, 0.0017, 0.0024];
+        ? [0.0021, 0.0027, 0.0034, 0.0042]
+        : [0.0018, 0.0023, 0.0029, 0.0036];
     return table[p];
   }
   function queueCap() {
@@ -2196,26 +2203,15 @@ function flashCpuAct(label) {
   ];
   function garbStateAt(c, r) {
     const v = S.board && S.board[r] && S.board[r][c];
-    if (isGarb(v)) {
-      const u = unpackG(v);
-      if (isBreakingPid(u.pid)) return 3;
-      const life = S.garbHits ? S.garbHits[u.pid] : null;
-      const maxh = (S.garbMax && S.garbMax[u.pid]) || life;
-      if (life != null && life <= 0) return 3;
-      if (life == null || maxh == null || life >= maxh) {
-        /* fall through to garbFx overlay */
-      } else if (life / maxh > 0.5) return 1;
-      else return 2;
-    }
-    if (S.garbFx) {
-      for (let i = 0; i < S.garbFx.length; i++) {
-        const f = S.garbFx[i];
-        if (c >= f.c && c < f.c + f.w && r >= f.r && r < f.r + f.h) {
-          if (f.t > 0.66) return 1;
-          if (f.t > 0.33) return 2;
-          return 3;
-        }
-      }
+    if (!isGarb(v)) return 0;
+    const u = unpackG(v);
+    if (isBreakingPid(u.pid)) return 3;
+    const life = S.garbHits ? S.garbHits[u.pid] : null;
+    const maxh = (S.garbMax && S.garbMax[u.pid]) || life;
+    if (life != null && life <= 0) return 3;
+    if (life != null && maxh != null && life < maxh) {
+      if (life / maxh > 0.5) return 1;
+      return 2;
     }
     return 0;
   }
@@ -2682,6 +2678,14 @@ function flashCpuAct(label) {
         if (S.rising >= 1) {
           S.rising = 0;
           S.riseAnim = false;
+          S.riseCool = Math.max(S.riseCool || 0, 700);
+          if (!raise(S.board)) endGame(false);
+        }
+      } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0) {
+        S.rising += currentRise() * (dt / 16);
+        if (S.rising >= 1) {
+          S.rising = 0;
+          S.riseCool = 700;
           if (!raise(S.board)) endGame(false);
         }
       }
@@ -2706,6 +2710,17 @@ function flashCpuAct(label) {
       if (S.cpu) {
         if (S.cpuFreeze > 0) S.cpuFreeze -= dt / 16;
         if (S.cpuStop > 0) S.cpuStop -= dt / 16;
+        if (S.cpuFreeze <= 0 && S.cpuStop <= 0) {
+          if ((S.cpuRiseCool || 0) > 0) S.cpuRiseCool -= dt;
+          else {
+            S.cpuRising = (S.cpuRising || 0) + currentRise() * (dt / 16);
+            if (S.cpuRising >= 1) {
+              S.cpuRising = 0;
+              S.cpuRiseCool = 700;
+              if (!raise(S.cpu)) endGame(true);
+            }
+          }
+        }
         if (S.cpuStop <= 0) {
           const hit = process(S.cpu, false);
           if (hit) S.cpuStop = Math.max(S.cpuStop, 24);
@@ -2745,7 +2760,7 @@ function flashCpuAct(label) {
     S.rising = 0;
     S.riseSpeed = S.mode === 'training' ? 0 : (S.diff === 'easy' ? 0.0016 : S.diff === 'hard' ? 0.004 : 0.0025);
     S.battleMs = 0; S.cpuAtkCool = 0; S.pAtkCool = 0; S.garbRecover = 0;
-    S.riseCool = 0; S.riseAnim = false;
+    S.riseCool = 0; S.riseAnim = false; S.cpuRiseCool = 0; S.cpuRising = 0;
     S.pAtkQ = []; S.cpuAtkQ = []; S.pAtkBusy = false; S.cpuAtkBusy = false;
     S.stop = 0; S.chain = 0; S.maxChain = 0; S.cleared = 0; S.sp = 0;
     S.over = false; S.won = false; S.paused = false;
