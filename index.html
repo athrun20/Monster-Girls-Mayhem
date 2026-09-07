@@ -1393,7 +1393,10 @@
       updateSpecial();
       if (S.chain >= 2) showChain(S.chain);
       const breaking = S.garbBreak && S.garbBreak.length;
-      S.stop = Math.max(S.stop, breaking ? 2 : (12 + S.chain * 8));
+      S.stop = Math.max(S.stop, breaking ? 2 : 5);
+      if (count >= 4 && S.chain === 1) {
+        /* combo popup is spawned in spawnPops */
+      }
       if (S.cpu) {
         const pieces = buildGarbage(S.chain, count, garbageOwner());
         if (pieces.length) {
@@ -1413,7 +1416,7 @@
       S.cpuChain++;
       S.cpuSp = Math.min(100, S.cpuSp + 2 + Math.min(3, count) + S.cpuChain * 2 + garbN * 2);
       setSpUi('cpu', S.cpuSp);
-      S.cpuStop = Math.max(S.cpuStop, 16 + S.cpuChain * 8);
+      S.cpuStop = Math.max(S.cpuStop, 8);
       const pieces = buildGarbage(S.cpuChain, count, garbageOwner());
       const room = Math.max(0, queueCap() - queuedCount());
       if (pieces.length && room > 0) S.pendingIn.push(...pieces.slice(0, room));
@@ -1828,6 +1831,7 @@ function flashCpuAct(label) {
   function doRaise() {
     if (S.screen !== 'battle' || S.over || S.paused) return;
     if ((S.riseCool || 0) > 0 || S.riseAnim) return;
+    if (S.fallT > 0 || (S.garbBreak && S.garbBreak.length) || S.incomingHold) return;
     if (!S.board || S.board[0].some(function (v) { return v != null; })) {
       sfx('danger');
       return;
@@ -2495,8 +2499,9 @@ function flashCpuAct(label) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const fy = f.y - off - (1 - f.t) * panel * 0.7;
-        ctx.strokeText(String(f.n), f.x, fy);
-        ctx.fillText(String(f.n), f.x, fy);
+        const label = f.n >= 4 ? String(f.n) : String(f.n);
+        ctx.strokeText(label, f.x, fy);
+        ctx.fillText(label, f.x, fy);
         ctx.restore();
       }
       S.floats = keepF;
@@ -2681,7 +2686,8 @@ function flashCpuAct(label) {
           S.riseCool = Math.max(S.riseCool || 0, 700);
           if (!raise(S.board)) endGame(false);
         }
-      } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0) {
+      } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0
+        && !(S.fallT > 0) && !(S.garbBreak && S.garbBreak.length) && !S.incomingHold) {
         S.rising += currentRise() * (dt / 16);
         if (S.rising >= 1) {
           S.rising = 0;
@@ -2695,7 +2701,7 @@ function flashCpuAct(label) {
         resolveGarbBreak(false);
       }
       if (S.fallT > 0 && S.fallY) {
-        S.fallT -= dt / 140;
+        S.fallT -= dt / 90;
         const tfall = Math.max(0, S.fallT);
         const ease = tfall * tfall;
         for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
