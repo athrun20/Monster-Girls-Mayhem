@@ -545,6 +545,17 @@
   .dbtn.wide {
     width: 56px; font-size: 1.05rem; border-color: #d4af37;
   }
+  .dbtn.rise {
+    width: 56px; font-size: 0.62rem; letter-spacing: 0.04em;
+    line-height: 1.05; display: inline-flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0;
+    border-color: rgba(255, 196, 80, 0.7);
+  }
+  .dbtn.rise span { font-size: 0.95rem; line-height: 1; }
+  .dock-row { gap: 8px; }
+  @media (max-width: 420px) {
+    .dbtn, .dbtn.wide, .dbtn.rise, .dbtn.special { width: 48px; min-width: 48px; height: 46px; }
+  }
   .dbtn.special {
     width: 56px; min-width: 56px; height: 48px; padding: 0 3px;
     font-size: 0.58rem; letter-spacing: 0.01em; font-weight: 800;
@@ -716,11 +727,11 @@
         <button class="dbtn" type="button" id="b-left" aria-label="Left">◀</button>
         <button class="dbtn wide" type="button" id="b-swap" aria-label="Swap">◆</button>
         <button class="dbtn" type="button" id="b-right" aria-label="Right">▶</button>
+        <button class="dbtn rise" type="button" id="b-raise" aria-label="Rise"><span>↑</span>RISE</button>
         <button class="dbtn special" type="button" id="b-special" disabled>SPECIAL</button>
       </div>
       <button class="dbtn tiny hidden-ctrl" type="button" id="b-up">▲</button>
       <button class="dbtn tiny hidden-ctrl" type="button" id="b-down">▼</button>
-      <button class="dbtn tiny hidden-ctrl" type="button" id="b-raise">R</button>
       <button class="dbtn tiny hidden-ctrl" type="button" id="b-pause">❚❚</button>
     </div>
     <div id="pause-ov">
@@ -1667,7 +1678,7 @@
     if (!S[key]) S[key] = [];
     const busy = fromCpu ? S.cpuAtkBusy : S.pAtkBusy;
     if (busy) {
-      if (S[key].length < 3) S[key].push(job);
+      if (S[key].length < 2) S[key].push(job);
       return;
     }
     beginAttack(job);
@@ -1808,8 +1819,16 @@ function flashCpuAct(label) {
     if (swap(S.board, S.cur)) { S.stop = Math.max(S.stop, 3); sfx('swap'); draw(); }
   }
   function doRaise() {
-    if (S.screen !== 'battle' || S.over || S.paused || S.mode === 'training') return;
-    if (raise(S.board)) { S.rising = 0; S.stop = 0; draw(); }
+    if (S.screen !== 'battle' || S.over || S.paused) return;
+    if ((S.riseCool || 0) > 0 || S.riseAnim) return;
+    if (!S.board || S.board[0].some(function (v) { return v != null; })) {
+      sfx('danger');
+      return;
+    }
+    S.riseCool = 680;
+    S.riseAnim = true;
+    S.rising = 0.02;
+    sfx('swap');
   }
 
   function clearRandom(b, n) {
@@ -2655,12 +2674,14 @@ function flashCpuAct(label) {
       if (S.cpuAtkCool > 0) S.cpuAtkCool -= dt / 16;
       if (S.pAtkCool > 0) S.pAtkCool -= dt / 16;
       if (S.garbRecover > 0) S.garbRecover -= dt / 16;
+      if (S.riseCool > 0) S.riseCool -= dt;
       if (S.freeze > 0) S.freeze -= dt / 16;
       if (S.stop > 0) S.stop -= dt / 16;
-      else if (S.mode !== 'training' && S.freeze <= 0) {
-        S.rising += currentRise() * (dt / 16);
+      if (S.riseAnim) {
+        S.rising += dt / 200;
         if (S.rising >= 1) {
           S.rising = 0;
+          S.riseAnim = false;
           if (!raise(S.board)) endGame(false);
         }
       }
@@ -2685,13 +2706,6 @@ function flashCpuAct(label) {
       if (S.cpu) {
         if (S.cpuFreeze > 0) S.cpuFreeze -= dt / 16;
         if (S.cpuStop > 0) S.cpuStop -= dt / 16;
-        else if (S.cpuFreeze <= 0) {
-          S.cpuRising += currentRise() * (dt / 16);
-          if (S.cpuRising >= 1) {
-            S.cpuRising = 0;
-            if (!raise(S.cpu)) endGame(true);
-          }
-        }
         if (S.cpuStop <= 0) {
           const hit = process(S.cpu, false);
           if (hit) S.cpuStop = Math.max(S.cpuStop, 24);
@@ -2731,6 +2745,7 @@ function flashCpuAct(label) {
     S.rising = 0;
     S.riseSpeed = S.mode === 'training' ? 0 : (S.diff === 'easy' ? 0.0016 : S.diff === 'hard' ? 0.004 : 0.0025);
     S.battleMs = 0; S.cpuAtkCool = 0; S.pAtkCool = 0; S.garbRecover = 0;
+    S.riseCool = 0; S.riseAnim = false;
     S.pAtkQ = []; S.cpuAtkQ = []; S.pAtkBusy = false; S.cpuAtkBusy = false;
     S.stop = 0; S.chain = 0; S.maxChain = 0; S.cleared = 0; S.sp = 0;
     S.over = false; S.won = false; S.paused = false;
@@ -3004,7 +3019,7 @@ function flashCpuAct(label) {
     if (k === 'ArrowUp' || k === 'w') { move(0, -1); e.preventDefault(); }
     if (k === 'ArrowDown' || k === 's') { move(0, 1); e.preventDefault(); }
     if (k === 'z' || k === ' ' || k === 'x') { doSwap(); e.preventDefault(); }
-    if (k === 'c' || k === 'Shift') { doRaise(); e.preventDefault(); }
+    if (k === 'c' || k === 'r' || k === 'R' || k === 'Shift') { doRaise(); e.preventDefault(); }
     if (k === 'v' || k === 'Enter') { fireSpecial(true); e.preventDefault(); }
   });
 
