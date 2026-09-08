@@ -988,40 +988,44 @@
     S.garbBreak = S.garbBreak.filter(function (br) { return br.t > 0; });
     return 0;
   }
+  function transformGarbLayer(b, pid) {
+    const cells = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const v = b[r][c];
+      if (isGarb(v) && unpackG(v).pid === pid) cells.push({ r: r, c: c, v: v });
+    }
+    if (!cells.length) return 0;
+    let bot = cells[0].r;
+    for (let i = 1; i < cells.length; i++) if (cells[i].r > bot) bot = cells[i].r;
+    let n = 0;
+    for (let i = 0; i < cells.length; i++) {
+      if (cells[i].r !== bot) continue;
+      let gem = rollGem(b, cells[i].r, cells[i].c, true);
+      if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (cells[i].r + cells[i].c) % nColors();
+      b[cells[i].r][cells[i].c] = gem;
+      n++;
+    }
+    if (b === S.board && n) {
+      if (!S.garbFx) S.garbFx = [];
+      S.garbFx.push({ c: cells[0].c, r: bot, w: 2, h: 1, t: 0.7, crack: true });
+      S.sp = Math.min(100, S.sp + Math.min(8, 2 + n));
+      setSpUi('p1', S.sp);
+      updateSpecial();
+    }
+    return n;
+  }
   function crackAdjacent(b, m) {
-    const hits = hitsMap(b);
     const seenPid = {};
-    const isPlayerBoard = b === S.board;
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       if (!m[r][c] || isGarb(b[r][c])) continue;
-      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([dr, dc]) => {
-        const rr = r + dr, cc = c + dc;
+      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
+        const rr = r + d[0], cc = c + d[1];
         if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
         if (!isGarb(b[rr][cc])) return;
-        const gv = b[rr][cc];
-        const u = unpackG(gv);
-        if (seenPid[u.pid]) return;
-        seenPid[u.pid] = true;
-        if (isBreakingPid(u.pid)) return;
-        if (hits[u.pid] == null) hits[u.pid] = 1;
-        if (hits[u.pid] <= 0) {
-          if (isPlayerBoard) queueGarbBreak(gv);
-          return;
-        }
-        hits[u.pid] -= 1;
-        if (hits[u.pid] <= 0) {
-          if (isPlayerBoard) {
-            queueGarbBreak(gv);
-          } else {
-            delete hits[u.pid];
-            for (let r2 = 0; r2 < ROWS; r2++) for (let c2 = 0; c2 < COLS; c2++) {
-              if (b[r2][c2] === gv) m[r2][c2] = true;
-            }
-          }
-        } else if (isPlayerBoard) {
-          if (!S.garbFx) S.garbFx = [];
-          S.garbFx.push({ c: cc, r: rr, w: Math.max(1, u.w || 2), h: 1, t: 1, crack: true });
-        }
+        const pid = unpackG(b[rr][cc]).pid;
+        if (seenPid[pid]) return;
+        seenPid[pid] = true;
+        transformGarbLayer(b, pid);
       });
     }
   }
