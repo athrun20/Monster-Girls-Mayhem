@@ -953,45 +953,42 @@
   function isBreakingPid(pid) {
     return !!(S.garbBreak && S.garbBreak.some(function (x) { return x.pid === pid; }));
   }
+  function convertGarbPid(b, pid) {
+    if (!b) return 0;
+    const hits = hitsMap(b);
+    const maxM = maxMap(b);
+    delete hits[pid];
+    delete maxM[pid];
+    let gems = 0;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const v = b[r][c];
+      if (!isGarb(v) || unpackG(v).pid !== pid) continue;
+      let gem = rollGem(b, r, c, true);
+      if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+      b[r][c] = gem;
+      gems++;
+    }
+    return gems;
+  }
   function queueGarbBreak(gv) {
     const u = unpackG(gv);
     if (!S.garbBreak) S.garbBreak = [];
     if (isBreakingPid(u.pid)) return;
-    S.garbBreak.push({ pid: u.pid, gv: gv, t: 200 });
-  }
-  function resolveGarbBreak(force) {
-    if (!S.garbBreak || !S.garbBreak.length || !S.board) return 0;
-    const keep = [];
-    let gems = 0;
-    for (let i = 0; i < S.garbBreak.length; i++) {
-      const br = S.garbBreak[i];
-      if (!force && br.t > 0) { keep.push(br); continue; }
-      const hits = hitsMap(S.board);
-      const maxM = maxMap(S.board);
-      delete hits[br.pid];
-      delete maxM[br.pid];
-      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-        const v = S.board[r][c];
-        if (!isGarb(v) || unpackG(v).pid !== br.pid) continue;
-        let gem = rollGem(S.board, r, c, true);
-        if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
-        S.board[r][c] = gem;
-        gems++;
-      }
-      if (S.garbFx) {
-        S.garbFx = S.garbFx.filter(function () { return true; });
-      }
-    }
-    S.garbBreak = keep;
+    S.garbBreak.push({ pid: u.pid, gv: gv, t: 140 });
+    const gems = convertGarbPid(S.board, u.pid);
     if (gems) {
       S.cleared += gems;
-      S.sp = Math.min(100, S.sp + gems * 4);
+      S.sp = Math.min(100, S.sp + Math.min(10, 2 + gems));
       setSpUi('p1', S.sp);
       updateSpecial();
       beginFall(S.board);
       S.stop = Math.max(S.stop, 2);
     }
-    return gems;
+  }
+  function resolveGarbBreak() {
+    if (!S.garbBreak || !S.garbBreak.length) return 0;
+    S.garbBreak = S.garbBreak.filter(function (br) { return br.t > 0; });
+    return 0;
   }
   function crackAdjacent(b, m) {
     const hits = hitsMap(b);
@@ -2356,7 +2353,7 @@ function flashCpuAct(label) {
       const v = b[r][c];
       const id = isGarb(v) ? unpackG(v).charId : v;
       S.fx.push({ c, r, v, garb: isGarb(v), id, t: 1, chain: S.chain });
-      const count = Math.min(14, Math.round((isGarb(v) ? 8 : 6) * chainBoost));
+      const count = Math.min(8, Math.round((isGarb(v) ? 4 : 5) * chainBoost));
       const ox = c * panel + panel / 2;
       const oy = r * panel + panel / 2;
       for (let i = 0; i < count; i++) {
@@ -2375,7 +2372,7 @@ function flashCpuAct(label) {
         });
       }
     }
-    if (S.parts.length > 180) S.parts.splice(0, S.parts.length - 180);
+    if (S.parts.length > 110) S.parts.splice(0, S.parts.length - 110);
     S.fx._combo = n;
     shakeFromMatch(n, S.chain || 1);
     if (S.fx.some(p => p.garb)) {
@@ -2712,7 +2709,7 @@ function flashCpuAct(label) {
           S.landPop = 1;
           S.stop = Math.max(S.stop, 2);
         }
-      } else if (S.stop <= 0 && !S.incomingHold && !(S.garbBreak && S.garbBreak.length)) process(S.board, true);
+      } else if (S.stop <= 0 && !S.incomingHold && !(S.fallT > 0)) process(S.board, true);
       if (S.cpu) {
         if (S.cpuFreeze > 0) S.cpuFreeze -= dt / 16;
         if (S.cpuStop > 0) S.cpuStop -= dt / 16;
