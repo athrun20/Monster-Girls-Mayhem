@@ -297,7 +297,7 @@
   /* BATTLE */
   #s-battle {
     padding: 0;
-    background: #0a0614 78% 38% / cover no-repeat;
+    background: #0a0614 center center / cover no-repeat;
     background-color: #0a0614;
     overflow: hidden;
     display: none;
@@ -306,7 +306,7 @@
   #s-battle.on { display: flex; }
   #s-battle::before {
     content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-    background: linear-gradient(90deg, rgba(8,4,18,0.94) 0%, rgba(8,4,18,0.62) 24%, rgba(8,4,18,0.22) 40%, transparent 54%);
+    background: linear-gradient(90deg, rgba(8,4,18,0.28) 0%, rgba(8,4,18,0.12) 22%, transparent 42%, rgba(8,4,18,0.18) 78%, rgba(8,4,18,0.35) 100%);
   }
   #s-battle::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -974,15 +974,13 @@
     const u = unpackG(gv);
     if (!S.garbBreak) S.garbBreak = [];
     if (isBreakingPid(u.pid)) return;
-    S.garbBreak.push({ pid: u.pid, gv: gv, t: 140 });
+    S.garbBreak.push({ pid: u.pid, gv: gv, t: 120 });
     const gems = convertGarbPid(S.board, u.pid);
     if (gems) {
       S.cleared += gems;
       S.sp = Math.min(100, S.sp + Math.min(10, 2 + gems));
       setSpUi('p1', S.sp);
       updateSpecial();
-      beginFall(S.board);
-      S.stop = Math.max(S.stop, 2);
     }
   }
   function resolveGarbBreak() {
@@ -1390,7 +1388,7 @@
       updateSpecial();
       if (S.chain >= 2) showChain(S.chain);
       const breaking = S.garbBreak && S.garbBreak.length;
-      S.stop = Math.max(S.stop, breaking ? 2 : 5);
+      S.stop = Math.max(S.stop, 3);
       if (count >= 4 && S.chain === 1) {
         /* combo popup is spawned in spawnPops */
       }
@@ -2698,7 +2696,7 @@ function flashCpuAct(label) {
         resolveGarbBreak(false);
       }
       if (S.fallT > 0 && S.fallY) {
-        S.fallT -= dt / 90;
+        S.fallT -= dt / 70;
         const tfall = Math.max(0, S.fallT);
         const ease = tfall * tfall;
         for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
@@ -2707,7 +2705,7 @@ function flashCpuAct(label) {
         if (S.fallT <= 0) {
           S.fallY = null; S.fallT = 0;
           S.landPop = 1;
-          S.stop = Math.max(S.stop, 2);
+          S.stop = 0;
         }
       } else if (S.stop <= 0 && !S.incomingHold && !(S.fallT > 0)) process(S.board, true);
       if (S.cpu) {
