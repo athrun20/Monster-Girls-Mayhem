@@ -899,16 +899,24 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
+  function gemVal(v) {
+    if (v == null || v === false) return null;
+    if (typeof v !== 'number' && typeof v !== 'string') return null;
+    const n = v | 0;
+    if (n < 0 || n >= 100) return null;
+    return n;
+  }
   function markMatches(b) {
+    if (!b) return null;
     const m = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     let any = false;
     for (let r = 0; r < ROWS; r++) {
       let c = 0;
       while (c < COLS) {
-        const v = b[r][c];
-        if (v === null || isGarb(v)) { c++; continue; }
+        const v = gemVal(b[r][c]);
+        if (v == null) { c++; continue; }
         let c2 = c + 1;
-        while (c2 < COLS && b[r][c2] === v) c2++;
+        while (c2 < COLS && gemVal(b[r][c2]) === v) c2++;
         if (c2 - c >= 3) { for (let k = c; k < c2; k++) m[r][k] = true; any = true; }
         c = c2;
       }
@@ -916,10 +924,10 @@
     for (let c = 0; c < COLS; c++) {
       let r = 0;
       while (r < ROWS) {
-        const v = b[r][c];
-        if (v === null || isGarb(v)) { r++; continue; }
+        const v = gemVal(b[r][c]);
+        if (v == null) { r++; continue; }
         let r2 = r + 1;
-        while (r2 < ROWS && b[r2][c] === v) r2++;
+        while (r2 < ROWS && gemVal(b[r2][c]) === v) r2++;
         if (r2 - r >= 3) { for (let k = r; k < r2; k++) m[k][c] = true; any = true; }
         r = r2;
       }
@@ -1433,7 +1441,9 @@
       return false;
     }
     S.topGrace = 0;
-    return raise(S.board);
+    const ok = raise(S.board);
+    if (ok) process(S.board, true);
+    return ok;
   }
 
   function process(b, isPlayer) {
@@ -1871,6 +1881,9 @@ function flashCpuAct(label) {
     }
   }
 
+  function resolving() {
+    return !!(S.fallT > 0);
+  }
   function swap(b, cur) {
     const c = cur.c, r = cur.r;
     if (c < 0 || c >= COLS - 1 || r < 0 || r >= ROWS) return false;
@@ -1880,7 +1893,6 @@ function flashCpuAct(label) {
       return false;
     }
     b[r][c] = d; b[r][c + 1] = a;
-    gravity(b);
     return true;
   }
 
@@ -1894,7 +1906,11 @@ function flashCpuAct(label) {
   }
   function doSwap() {
     if (S.screen !== 'battle' || S.over || S.paused) return;
-    if (swap(S.board, S.cur)) { S.stop = Math.max(S.stop, 3); sfx('swap'); draw(); }
+    if (resolving()) return;
+    if (!swap(S.board, S.cur)) return;
+    sfx('swap');
+    if (!process(S.board, true)) beginFall(S.board);
+    draw();
   }
   function doRaise() {
     if (S.screen !== 'battle' || S.over || S.paused) return;
@@ -2188,6 +2204,7 @@ function flashCpuAct(label) {
       if (S.aiT < 28) return;
       S.aiT = 0;
       swap(S.cpu, S.cpuCur);
+      gravity(S.cpu);
       S.cpuStop = Math.max(S.cpuStop, 10);
       S.aiPhase = 'wait';
     } else {
@@ -2826,8 +2843,11 @@ function flashCpuAct(label) {
           S.fallY = null; S.fallT = 0;
           S.landPop = 1;
           S.stop = 0;
+          process(S.board, true);
         }
-      } else if (S.stop <= 0 && !S.incomingHold && !(S.fallT > 0)) process(S.board, true);
+      } else if (!(S.fallT > 0)) {
+        process(S.board, true);
+      }
       if (S.cpu) {
         if (S.cpuFreeze > 0) S.cpuFreeze -= dt / 16;
         if (S.cpuStop > 0) S.cpuStop -= dt / 16;
