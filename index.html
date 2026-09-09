@@ -989,8 +989,11 @@
     return 0;
   }
   function cellToGem(b, r, c) {
+    const n = nColors();
     let gem = rollGem(b, r, c, true);
-    if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+    if (gem == null || isGarb(gem) || gem < 0 || gem >= n) gem = (r + c) % n;
+    gem = gem | 0;
+    if (gem < 0 || gem >= n || gem >= 100) gem = (r + c) % n;
     b[r][c] = gem;
     return gem;
   }
@@ -1046,23 +1049,88 @@
     return m;
   }
 
+  function garbMassesOn(b) {
+    const seen = Array.from({ length: ROWS }, function () { return Array(COLS).fill(false); });
+    const masses = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!isGarb(b[r][c]) || seen[r][c]) continue;
+      const cells = [];
+      const q = [{ r: r, c: c }];
+      seen[r][c] = true;
+      while (q.length) {
+        const p = q.pop();
+        cells.push(p);
+        [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
+          const rr = p.r + d[1], cc = p.c + d[0];
+          if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
+          if (seen[rr][cc] || !isGarb(b[rr][cc])) return;
+          seen[rr][cc] = true;
+          q.push({ r: rr, c: cc });
+        });
+      }
+      masses.push(cells);
+    }
+    masses.sort(function (a, c) {
+      let ma = 0, mc = 0;
+      for (let i = 0; i < a.length; i++) ma = Math.max(ma, a[i].r);
+      for (let i = 0; i < c.length; i++) mc = Math.max(mc, c[i].r);
+      return mc - ma;
+    });
+    return masses;
+  }
+  function dropGarbMasses(b) {
+    let moved = 0;
+    const masses = garbMassesOn(b);
+    for (let m = 0; m < masses.length; m++) {
+      const cells = masses[m];
+      const inMass = {};
+      for (let i = 0; i < cells.length; i++) inMass[cells[i].r + ',' + cells[i].c] = 1;
+      while (true) {
+        let ok = true;
+        for (let i = 0; i < cells.length; i++) {
+          const nr = cells[i].r + 1, nc = cells[i].c;
+          if (nr >= ROWS) { ok = false; break; }
+          if (b[nr][nc] != null && !inMass[nr + ',' + nc]) { ok = false; break; }
+        }
+        if (!ok) break;
+        cells.sort(function (a, c) { return c.r - a.r; });
+        for (let i = 0; i < cells.length; i++) {
+          const p = cells[i];
+          const v = b[p.r][p.c];
+          b[p.r][p.c] = null;
+          b[p.r + 1][p.c] = v;
+          delete inMass[p.r + ',' + p.c];
+          p.r += 1;
+          inMass[p.r + ',' + p.c] = 1;
+        }
+        moved += cells.length;
+      }
+    }
+    return moved;
+  }
   function gravity(b) {
     let moved = 0;
     const from = [];
     for (let c = 0; c < COLS; c++) {
-      let write = ROWS - 1;
+      const gems = [];
       for (let r = ROWS - 1; r >= 0; r--) {
-        if (b[r][c] !== null) {
-          if (write !== r) {
-            const v = b[r][c];
-            b[write][c] = v; b[r][c] = null;
-            from.push({ c: c, r: write, dist: write - r });
-            moved++;
-          }
-          write--;
+        if (b[r][c] != null && !isGarb(b[r][c])) {
+          gems.push({ v: b[r][c], r: r });
+          b[r][c] = null;
+        }
+      }
+      let gi = 0;
+      for (let r = ROWS - 1; r >= 0 && gi < gems.length; r--) {
+        if (isGarb(b[r][c])) continue;
+        const src = gems[gi++];
+        b[r][c] = src.v;
+        if (src.r !== r) {
+          from.push({ c: c, r: r, dist: r - src.r });
+          moved++;
         }
       }
     }
+    moved += dropGarbMasses(b);
     return { moved: moved, from: from };
   }
   function beginFall(b) {
