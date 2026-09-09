@@ -1379,7 +1379,7 @@
     gravity(b);
     if (b === S.board && cells) {
       beginFall(b);
-      S.riseCool = Math.max(S.riseCool || 0, 1400);
+      S.riseCool = Math.max(S.riseCool || 0, 400);
       S.garbRecover = Math.max(S.garbRecover || 0, 36);
       shakeFromGarb(cells);
       burstParts((cx / cells + 0.5) * panel, (cy / cells + 0.5) * panel, garbageOwner(), 6 + Math.min(8, cells), 1.1);
@@ -1427,23 +1427,39 @@
     return true;
   }
   function boardSettled() {
-    return S.stop <= 0 && !(S.fallT > 0) && !S.incomingHold && !S.riseAnim
-      && !(S.pendingIn && S.pendingIn.length) && (S.garbRecover || 0) <= 0;
+    return S.stop <= 0 && !(S.fallT > 0) && !S.riseAnim;
   }
-  function tryPlayerRaise() {
+  function topOccupied(b) {
+    if (!b) return false;
+    for (let c = 0; c < COLS; c++) if (b[0][c] != null) return true;
+    return false;
+  }
+  function commitRise(reason) {
     if (!S.board) return false;
-    if (!boardSettled()) return false;
-    let top = false;
-    for (let c = 0; c < COLS; c++) if (S.board[0][c] != null) { top = true; break; }
-    if (top) {
-      S.topGrace = (S.topGrace || 0) + 1;
-      if (S.topGrace >= 50) endGame(false);
+    if (S.fallT > 0) return false;
+    console.log('[RISE] Adding row (' + reason + ')');
+    if (topOccupied(S.board)) {
+      if (reason === 'auto') {
+        S.topGrace = (S.topGrace || 0) + 1;
+        if (S.topGrace >= 50) endGame(false);
+      } else {
+        sfx('danger');
+      }
+      console.log('[RISE] blocked — top row occupied');
       return false;
     }
     S.topGrace = 0;
+    console.log('[RISE] Grid shifted upward');
     const ok = raise(S.board);
-    if (ok) process(S.board, true);
+    if (ok) {
+      console.log('[RISE] New bottom row inserted');
+      process(S.board, true);
+      console.log('[RISE] Rise complete');
+    }
     return ok;
+  }
+  function tryPlayerRaise() {
+    return commitRise('auto');
   }
 
   function process(b, isPlayer) {
@@ -1912,18 +1928,32 @@ function flashCpuAct(label) {
     if (!process(S.board, true)) beginFall(S.board);
     draw();
   }
-  function doRaise() {
-    if (S.screen !== 'battle' || S.over || S.paused) return;
-    if ((S.riseCool || 0) > 0 || S.riseAnim) return;
-    if (S.fallT > 0 || (S.garbBreak && S.garbBreak.length) || S.incomingHold) return;
-    if (!S.board || S.board[0].some(function (v) { return v != null; })) {
+  function startManualRise() {
+    if (!S.board || S.over || S.paused || S.screen !== 'battle') return false;
+    if (S.riseAnim) return false;
+    if ((S.manRiseCool || 0) > 0) return false;
+    if (topOccupied(S.board)) {
       sfx('danger');
-      return;
+      console.log('[RISE] Manual rise requested — top blocked');
+      return false;
     }
-    S.riseCool = 680;
+    console.log('[RISE] Manual rise requested');
+    S.manRiseCool = 700;
+    S.riseCool = Math.max(S.riseCool || 0, 700);
     S.riseAnim = true;
+    S.riseManual = true;
     S.rising = 0.02;
     sfx('swap');
+    return true;
+  }
+  function doRaise() {
+    if (S.screen !== 'battle' || S.over || S.paused) return;
+    if (S.fallT > 0) {
+      S.riseQueued = true;
+      console.log('[RISE] Manual rise queued until settle');
+      return;
+    }
+    startManualRise();
   }
 
   function clearRandom(b, n) {
@@ -2809,16 +2839,21 @@ function flashCpuAct(label) {
       if (S.pAtkCool > 0) S.pAtkCool -= dt / 16;
       if (S.garbRecover > 0) S.garbRecover -= dt / 16;
       if (S.riseCool > 0) S.riseCool -= dt;
+      if (S.manRiseCool > 0) S.manRiseCool -= dt;
       if (S.freeze > 0) S.freeze -= dt / 16;
       if (S.stop > 0) S.stop -= dt / 16;
       if (S.riseAnim) {
-        S.rising += dt / 200;
+        S.rising += dt / 180;
         if (S.rising >= 1) {
+          const manual = !!S.riseManual;
           S.rising = 0;
           S.riseAnim = false;
-          S.riseCool = Math.max(S.riseCool || 0, 700);
-          if (!tryPlayerRaise()) { /* skipped or KO if settled */ }
+          S.riseManual = false;
+          commitRise(manual ? 'manual' : 'auto');
         }
+      } else if (S.riseQueued && S.fallT <= 0) {
+        S.riseQueued = false;
+        startManualRise();
       } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0) {
         S.rising += currentRise() * (dt / 16);
         if (S.rising >= 1) {
@@ -2901,7 +2936,7 @@ function flashCpuAct(label) {
     S.rising = 0;
     S.riseSpeed = S.mode === 'training' ? 0 : (S.diff === 'easy' ? 0.0016 : S.diff === 'hard' ? 0.004 : 0.0025);
     S.battleMs = 0; S.cpuAtkCool = 0; S.pAtkCool = 0; S.garbRecover = 0;
-    S.riseCool = 0; S.riseAnim = false; S.cpuRiseCool = 0; S.cpuRising = 0;
+    S.riseCool = 0; S.riseAnim = false; S.riseManual = false; S.riseQueued = false; S.manRiseCool = 0; S.cpuRiseCool = 0; S.cpuRising = 0;
     S.pAtkQ = []; S.cpuAtkQ = []; S.pAtkBusy = false; S.cpuAtkBusy = false;
     S.stop = 0; S.chain = 0; S.maxChain = 0; S.cleared = 0; S.sp = 0;
     S.over = false; S.won = false; S.paused = false;
@@ -3146,8 +3181,15 @@ function flashCpuAct(label) {
 
   function bind(id, fn) {
     const el = document.getElementById(id);
-    el.addEventListener('click', e => { e.preventDefault(); fn(); });
-    el.addEventListener('pointerdown', e => { e.preventDefault(); fn(); });
+    let last = 0;
+    const go = function (e) {
+      e.preventDefault();
+      const t = performance.now();
+      if (t - last < 90) return;
+      last = t;
+      fn();
+    };
+    el.addEventListener('pointerup', go);
   }
   bind('b-left', () => move(-1, 0));
   bind('b-right', () => move(1, 0));
