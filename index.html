@@ -1021,6 +1021,23 @@
     }
     delete hitsMap(b)[pid];
     delete maxMap(b)[pid];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const v = b[r][c];
+      if (!isGarb(v)) continue;
+      const u = unpackG(v);
+      let neighbors = 0;
+      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
+        const rr = r + d[0], cc = c + d[1];
+        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
+        if (isGarb(b[rr][cc]) && unpackG(b[rr][cc]).pid === u.pid) neighbors++;
+      });
+      if (neighbors === 0) {
+        let gem = rollGem(b, r, c, true);
+        if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+        b[r][c] = gem;
+        n++;
+      }
+    }
     if (b === S.board && n) {
       if (!S.garbFx) S.garbFx = [];
       S.garbFx.push({ c: fxC, r: fxR, w: 2, h: 1, t: 0.55, crack: true });
@@ -1336,8 +1353,11 @@
         cy += wri.r0 + rr;
       }
     }
+    gravity(b);
     if (b === S.board && cells) {
-      S.riseCool = Math.max(S.riseCool || 0, 900);
+      beginFall(b);
+      S.riseCool = Math.max(S.riseCool || 0, 1400);
+      S.garbRecover = Math.max(S.garbRecover || 0, 36);
       shakeFromGarb(cells);
       burstParts((cx / cells + 0.5) * panel, (cy / cells + 0.5) * panel, garbageOwner(), 6 + Math.min(8, cells), 1.1);
     }
@@ -1385,16 +1405,19 @@
   }
   function boardSettled() {
     return S.stop <= 0 && !(S.fallT > 0) && !S.incomingHold && !S.riseAnim
-      && !(S.pendingIn && S.pendingIn.length);
+      && !(S.pendingIn && S.pendingIn.length) && (S.garbRecover || 0) <= 0;
   }
   function tryPlayerRaise() {
     if (!S.board) return false;
+    if (!boardSettled()) return false;
     let top = false;
     for (let c = 0; c < COLS; c++) if (S.board[0][c] != null) { top = true; break; }
     if (top) {
-      if (boardSettled()) endGame(false);
+      S.topGrace = (S.topGrace || 0) + 1;
+      if (S.topGrace >= 50) endGame(false);
       return false;
     }
+    S.topGrace = 0;
     return raise(S.board);
   }
 
@@ -2717,7 +2740,7 @@ function flashCpuAct(label) {
           if (!tryPlayerRaise()) { /* skipped or KO if settled */ }
         }
       } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0
-        && !(S.fallT > 0) && !S.incomingHold) {
+        && !(S.fallT > 0) && !S.incomingHold && (S.garbRecover || 0) <= 0) {
         S.rising += currentRise() * (dt / 16);
         if (S.rising >= 1) {
           S.rising = 0;
