@@ -988,78 +988,55 @@
     S.garbBreak = S.garbBreak.filter(function (br) { return br.t > 0; });
     return 0;
   }
+  function cellToGem(b, r, c) {
+    let gem = rollGem(b, r, c, true);
+    if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+    b[r][c] = gem;
+    return gem;
+  }
+  function garbExposedBottom(b, r, c) {
+    if (!isGarb(b[r][c])) return false;
+    return r + 1 >= ROWS || !isGarb(b[r + 1][c]);
+  }
   function transformGarbLayer(b, pid) {
-    const want = {};
-    const q = [];
+    let n = 0;
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const v = b[r][c];
       if (!isGarb(v) || unpackG(v).pid !== pid) continue;
-      want[r + ',' + c] = 1;
-      q.push({ r: r, c: c });
-    }
-    for (let i = 0; i < q.length; i++) {
-      const p = q[i];
-      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
-        const rr = p.r + d[0], cc = p.c + d[1];
-        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
-        const key = rr + ',' + cc;
-        if (want[key]) return;
-        if (!isGarb(b[rr][cc])) return;
-        want[key] = 1;
-        q.push({ r: rr, c: cc });
-      });
-    }
-    if (!q.length) return 0;
-    let n = 0, fxC = q[0].c, fxR = q[0].r;
-    for (let i = 0; i < q.length; i++) {
-      const r = q[i].r, c = q[i].c;
-      let gem = rollGem(b, r, c, true);
-      if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
-      b[r][c] = gem;
+      if (!garbExposedBottom(b, r, c)) continue;
+      cellToGem(b, r, c);
       n++;
-      if (r > fxR) { fxR = r; fxC = c; }
-    }
-    delete hitsMap(b)[pid];
-    delete maxMap(b)[pid];
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      const v = b[r][c];
-      if (!isGarb(v)) continue;
-      const u = unpackG(v);
-      let neighbors = 0;
-      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
-        const rr = r + d[0], cc = c + d[1];
-        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
-        if (isGarb(b[rr][cc]) && unpackG(b[rr][cc]).pid === u.pid) neighbors++;
-      });
-      if (neighbors === 0) {
-        let gem = rollGem(b, r, c, true);
-        if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
-        b[r][c] = gem;
-        n++;
-      }
-    }
-    if (b === S.board && n) {
-      if (!S.garbFx) S.garbFx = [];
-      S.garbFx.push({ c: fxC, r: fxR, w: 2, h: 1, t: 0.55, crack: true });
-      S.sp = Math.min(100, S.sp + Math.min(8, 2 + n));
-      setSpUi('p1', S.sp);
-      updateSpecial();
     }
     return n;
   }
   function crackAdjacent(b, m) {
-    const seenPid = {};
+    const keys = {};
+    const cells = [];
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       if (!m[r][c] || isGarb(b[r][c])) continue;
       [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
         const rr = r + d[0], cc = c + d[1];
         if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
         if (!isGarb(b[rr][cc])) return;
-        const pid = unpackG(b[rr][cc]).pid;
-        if (seenPid[pid]) return;
-        seenPid[pid] = true;
-        transformGarbLayer(b, pid);
+        if (!garbExposedBottom(b, rr, cc)) return;
+        const k = rr + ',' + cc;
+        if (keys[k]) return;
+        keys[k] = 1;
+        cells.push({ r: rr, c: cc });
       });
+    }
+    if (!cells.length) return;
+    let n = 0;
+    for (let i = 0; i < cells.length; i++) {
+      cellToGem(b, cells[i].r, cells[i].c);
+      n++;
+    }
+    if (b === S.board && n) {
+      if (!S.garbFx) S.garbFx = [];
+      S.garbFx.push({ c: cells[0].c, r: cells[0].r, w: 1, h: 1, t: 0.4, crack: true });
+      S.sp = Math.min(100, S.sp + Math.min(8, 2 + n));
+      setSpUi('p1', S.sp);
+      updateSpecial();
     }
   }
   function findMatches(b, applyCrack) {
@@ -1345,7 +1322,7 @@
     for (let i = 0; i < writes.length; i++) {
       const wri = writes[i];
       const p = wri.p;
-      const val = 1000 + pid * 100 + (charId | 0) * 10 + Math.max(1, Math.min(6, p.w | 0));
+      const val = 1000 + pid * 100 + (charId | 0) * 10 + 1;
       for (let rr = 0; rr < p.h; rr++) for (let cc = 0; cc < p.w; cc++) {
         b[wri.r0 + rr][wri.c0 + cc] = val;
         cells++;
@@ -2272,63 +2249,47 @@ function flashCpuAct(label) {
     }
     return 0;
   }
-  function drawEmberUnit(c, r, w, h, off, state) {
+  function garbNeighbor(c, r, dc, dr) {
+    const rr = r + dr, cc = c + dc;
+    if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS || !S.board) return false;
+    return isGarb(S.board[rr][cc]);
+  }
+  function drawGarbCell(c, r, v, off) {
     const x = c * panel + 1, y = r * panel - off + 1;
-    const tw = w * panel - 2, th = h * panel - 2;
-    const im = emberGarbImgs[state] || emberGarbImgs[0];
+    const tw = panel - 2, th = panel - 2;
+    const u = unpackG(v);
+    const charId = (u && u.charId != null) ? u.charId : garbageOwner();
+    const im = emberGarbImgs[0];
     ctx.save();
-    if (im && im.complete && im.naturalWidth) {
+    if (charId === 0 && im && im.complete && im.naturalWidth) {
       ctx.drawImage(im, x, y, tw, th);
     } else {
-      const mat = GMAT[0];
-      round(x, y, tw, th, 5);
+      const mat = GMAT[charId] || GMAT[0];
+      round(x, y, tw, th, 4);
       ctx.fillStyle = mat.b;
       ctx.fill();
+      ctx.fillStyle = mat.c;
+      ctx.font = 'bold ' + Math.max(10, tw * 0.42) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(mat.mark, x + tw / 2, y + th / 2 + 1);
     }
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,180,90,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (!garbNeighbor(c, r, 0, -1)) { ctx.moveTo(x, y); ctx.lineTo(x + tw, y); }
+    if (!garbNeighbor(c, r, 0, 1)) { ctx.moveTo(x, y + th); ctx.lineTo(x + tw, y + th); }
+    if (!garbNeighbor(c, r, -1, 0)) { ctx.moveTo(x, y); ctx.lineTo(x, y + th); }
+    if (!garbNeighbor(c, r, 1, 0)) { ctx.moveTo(x + tw, y); ctx.lineTo(x + tw, y + th); }
+    ctx.stroke();
     ctx.restore();
   }
   function drawGarbBlock(c0, r0, bw, bh, v, off) {
-    const charId = garbageOwner();
-    const uw = 2, uh = 1;
-    if (charId === 0) {
-      for (let rr = 0; rr < bh; rr += uh) {
-        for (let cc = 0; cc < bw; ) {
-          const w = Math.min(uw, bw - cc);
-          const h = Math.min(uh, bh - rr);
-          drawEmberUnit(c0 + cc, r0 + rr, w, h, off, garbStateAt(c0 + cc, r0 + rr));
-          cc += w;
-        }
-      }
-      return;
+    for (let rr = 0; rr < bh; rr++) for (let cc = 0; cc < bw; cc++) {
+      drawGarbCell(c0 + cc, r0 + rr, v, off);
     }
-    const mat = GMAT[charId] || GMAT[5];
-    const x = c0 * panel + 1, y = r0 * panel - off + 1;
-    const tw = bw * panel - 2, th = bh * panel - 2;
-    ctx.save();
-    round(x, y, tw, th, 5);
-    const g = ctx.createLinearGradient(x, y, x + tw, y + th);
-    g.addColorStop(0, mat.a);
-    g.addColorStop(0.45, mat.b);
-    g.addColorStop(1, mat.a);
-    ctx.fillStyle = g;
-    ctx.fill();
-    ctx.clip();
-    ctx.globalAlpha = 0.28;
-    ctx.fillStyle = mat.c;
-    for (let i = 0; i < bw + bh; i++) ctx.fillRect(x + i * 11 - 6, y, 3, th);
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = mat.c;
-    ctx.font = 'bold ' + Math.max(10, Math.min(tw, th) * 0.42) + 'px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(mat.mark, x + tw / 2, y + th / 2 + 1);
-    ctx.restore();
-    ctx.strokeStyle = mat.c;
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.85;
-    round(x, y, tw, th, 5);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
   }
   function round(x, y, w, h, r) {
     ctx.beginPath();
@@ -2653,33 +2614,17 @@ function flashCpuAct(label) {
     for (let r = 1; r < ROWS; r++) {
       ctx.beginPath(); ctx.moveTo(0, r * panel); ctx.lineTo(W, r * panel); ctx.stroke();
     }
-    const seen = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const v = S.board[r][c];
-      if (v === null || seen[r][c]) continue;
+      if (v === null) continue;
+      const fy = (S.fallY && S.fallY[r] && S.fallY[r][c]) ? S.fallY[r][c] : 0;
       if (!isGarb(v)) {
-        const fy = (S.fallY && S.fallY[r] && S.fallY[r][c]) ? S.fallY[r][c] : 0;
         drawPanel(c * panel, r * panel - off + fy, v);
         continue;
       }
-      let bw = 1, bh = 1;
-      while (c + bw < COLS && S.board[r][c + bw] === v) bw++;
-      while (r + bh < ROWS) {
-        let ok = true;
-        for (let cc = 0; cc < bw; cc++) if (S.board[r + bh][c + cc] !== v) { ok = false; break; }
-        if (!ok) break;
-        bh++;
-      }
-      for (let rr = 0; rr < bh; rr++) for (let cc = 0; cc < bw; cc++) seen[r + rr][c + cc] = true;
-      drawGarbBlock(c, r, bw, bh, v, off);
+      drawGarbCell(c, r, v, off + fy);
     }
     drawFx(off);
-    if (S.incomingHold && S.incomingHold[0]) {
-      const p = S.incomingHold[0];
-      const { charId, w, h } = { charId: p.charId, w: p.w, h: p.h };
-      const y = 4 + (1 - Math.min(1, S.incomingWait / 42)) * (panel * 0.4);
-      drawGarbBlock(0, 0, w, Math.max(1, h), packG(charId, w), panel - y);
-    }
     // two-cell cursor: same grid + rise offset as gems
     const cr = Math.max(0, Math.min(ROWS - 1, S.cur.r | 0));
     const cc = Math.max(0, Math.min(COLS - 2, S.cur.c | 0));
