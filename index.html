@@ -989,25 +989,41 @@
     return 0;
   }
   function transformGarbLayer(b, pid) {
-    const cells = [];
+    const want = {};
+    const q = [];
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const v = b[r][c];
-      if (isGarb(v) && unpackG(v).pid === pid) cells.push({ r: r, c: c, v: v });
+      if (!isGarb(v) || unpackG(v).pid !== pid) continue;
+      want[r + ',' + c] = 1;
+      q.push({ r: r, c: c });
     }
-    if (!cells.length) return 0;
-    let bot = cells[0].r;
-    for (let i = 1; i < cells.length; i++) if (cells[i].r > bot) bot = cells[i].r;
-    let n = 0;
-    for (let i = 0; i < cells.length; i++) {
-      if (cells[i].r !== bot) continue;
-      let gem = rollGem(b, cells[i].r, cells[i].c, true);
-      if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (cells[i].r + cells[i].c) % nColors();
-      b[cells[i].r][cells[i].c] = gem;
+    for (let i = 0; i < q.length; i++) {
+      const p = q[i];
+      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
+        const rr = p.r + d[0], cc = p.c + d[1];
+        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
+        const key = rr + ',' + cc;
+        if (want[key]) return;
+        if (!isGarb(b[rr][cc])) return;
+        want[key] = 1;
+        q.push({ r: rr, c: cc });
+      });
+    }
+    if (!q.length) return 0;
+    let n = 0, fxC = q[0].c, fxR = q[0].r;
+    for (let i = 0; i < q.length; i++) {
+      const r = q[i].r, c = q[i].c;
+      let gem = rollGem(b, r, c, true);
+      if (gem == null || isGarb(gem) || gem < 0 || gem > 7) gem = (r + c) % nColors();
+      b[r][c] = gem;
       n++;
+      if (r > fxR) { fxR = r; fxC = c; }
     }
+    delete hitsMap(b)[pid];
+    delete maxMap(b)[pid];
     if (b === S.board && n) {
       if (!S.garbFx) S.garbFx = [];
-      S.garbFx.push({ c: cells[0].c, r: bot, w: 2, h: 1, t: 0.7, crack: true });
+      S.garbFx.push({ c: fxC, r: fxR, w: 2, h: 1, t: 0.55, crack: true });
       S.sp = Math.min(100, S.sp + Math.min(8, 2 + n));
       setSpUi('p1', S.sp);
       updateSpecial();
