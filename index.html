@@ -1021,33 +1021,43 @@
     return n;
   }
   function crackAdjacent(b, m) {
-    const keys = {};
-    const cells = [];
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      if (!m[r][c] || isGarb(b[r][c])) continue;
-      [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(function (d) {
-        const rr = r + d[0], cc = c + d[1];
-        if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
-        if (!isGarb(b[rr][cc])) return;
-        if (!garbExposedBottom(b, rr, cc)) return;
-        const k = rr + ',' + cc;
-        if (keys[k]) return;
-        keys[k] = 1;
-        cells.push({ r: rr, c: cc });
-      });
+    if (!b || !m) return;
+    const masses = garbMassesOn(b);
+    const flipped = [];
+    for (let i = 0; i < masses.length; i++) {
+      const cells = masses[i];
+      let touch = false;
+      for (let j = 0; j < cells.length && !touch; j++) {
+        const r = cells[j].r, c = cells[j].c;
+        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (let d = 0; d < 4; d++) {
+          const rr = r + dirs[d][0], cc = c + dirs[d][1];
+          if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
+          if (m[rr][cc] && b[rr][cc] != null && !isGarb(b[rr][cc])) { touch = true; break; }
+        }
+      }
+      if (!touch) continue;
+      let maxR = cells[0].r, minR = cells[0].r;
+      for (let j = 0; j < cells.length; j++) {
+        if (cells[j].r > maxR) maxR = cells[j].r;
+        if (cells[j].r < minR) minR = cells[j].r;
+      }
+      const layer = maxR;
+      for (let j = 0; j < cells.length; j++) {
+        if (cells[j].r !== layer) continue;
+        if (!isGarb(b[cells[j].r][cells[j].c])) continue;
+        cellToGem(b, cells[j].r, cells[j].c);
+        flipped.push(cells[j]);
+      }
     }
-    if (!cells.length) return;
-    let n = 0;
-    for (let i = 0; i < cells.length; i++) {
-      cellToGem(b, cells[i].r, cells[i].c);
-      n++;
-    }
-    if (b === S.board && n) {
+    if (!flipped.length) return;
+    if (b === S.board) {
       if (!S.garbFx) S.garbFx = [];
-      S.garbFx.push({ c: cells[0].c, r: cells[0].r, w: 1, h: 1, t: 0.4, crack: true });
-      S.sp = Math.min(100, S.sp + Math.min(8, 2 + n));
+      S.garbFx.push({ c: flipped[0].c, r: flipped[0].r, w: 1, h: 1, t: 0.35, crack: true });
+      S.sp = Math.min(100, S.sp + Math.min(8, 2 + flipped.length));
       setSpUi('p1', S.sp);
       updateSpecial();
+      sfx('garb');
     }
   }
   function findMatches(b, applyCrack) {
@@ -2402,28 +2412,51 @@ function flashCpuAct(label) {
     return { cells: cells, minC: minC, maxC: maxC, minR: minR, maxR: maxR, solid: solid };
   }
   function fillGarbRect(x, y, tw, th, emblem) {
-    const g = ctx.createLinearGradient(x, y, x, y + th);
-    g.addColorStop(0, '#5a120c');
-    g.addColorStop(0.45, '#b42318');
-    g.addColorStop(1, '#3b0708');
+    const r = Math.min(8, Math.max(4, Math.min(tw, th) * 0.18));
     ctx.save();
-    round(x, y, tw, th, 6);
-    ctx.fillStyle = g;
+    round(x, y, tw, th, r);
+    const fire = ctx.createLinearGradient(x, y, x, y + th);
+    fire.addColorStop(0, '#ffe9a8');
+    fire.addColorStop(0.14, '#ffb347');
+    fire.addColorStop(0.34, '#ff6a1a');
+    fire.addColorStop(0.55, '#e3260c');
+    fire.addColorStop(0.78, '#7a100c');
+    fire.addColorStop(1, '#1c0406');
+    ctx.fillStyle = fire;
     ctx.fill();
     ctx.clip();
-    ctx.fillStyle = 'rgba(255,120,40,0.16)';
-    ctx.fillRect(x, y, tw, Math.max(4, th * 0.22));
+    const core = ctx.createRadialGradient(
+      x + tw * 0.5, y + th * 0.32, Math.max(4, Math.min(tw, th) * 0.08),
+      x + tw * 0.5, y + th * 0.55, Math.max(tw, th) * 0.72
+    );
+    core.addColorStop(0, 'rgba(255,245,200,0.55)');
+    core.addColorStop(0.35, 'rgba(255,140,40,0.22)');
+    core.addColorStop(1, 'rgba(40,0,0,0)');
+    ctx.fillStyle = core;
+    ctx.fillRect(x, y, tw, th);
+    const sheen = ctx.createLinearGradient(x, y, x, y + th * 0.42);
+    sheen.addColorStop(0, 'rgba(255,255,240,0.38)');
+    sheen.addColorStop(1, 'rgba(255,160,40,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(x, y, tw, th * 0.42);
     if (emblem && tw >= panel * 1.6 && th >= panel * 0.7) {
-      ctx.fillStyle = 'rgba(255,210,140,0.55)';
-      ctx.font = 'bold ' + Math.min(tw, th) * 0.38 + 'px sans-serif';
+      ctx.fillStyle = 'rgba(255,236,180,0.78)';
+      ctx.shadowColor = 'rgba(255,120,20,0.7)';
+      ctx.shadowBlur = 10;
+      ctx.font = 'bold ' + Math.min(tw, th) * 0.34 + 'px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('◆', x + tw / 2, y + th / 2 + 1);
+      ctx.shadowBlur = 0;
     }
     ctx.restore();
-    ctx.strokeStyle = 'rgba(255,170,90,0.7)';
-    ctx.lineWidth = 2;
-    round(x, y, tw, th, 6);
+    ctx.strokeStyle = 'rgba(255,210,120,0.9)';
+    ctx.lineWidth = 2.2;
+    round(x + 1.2, y + 1.2, tw - 2.4, th - 2.4, Math.max(3, r - 1));
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,70,20,0.85)';
+    ctx.lineWidth = 1.4;
+    round(x, y, tw, th, r);
     ctx.stroke();
   }
   function drawGarbMass(mass, off) {
