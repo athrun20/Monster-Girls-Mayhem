@@ -34,15 +34,16 @@
 
   /* Landscape / tablet / PC: girl — board — girl (current art, swap later) */
   @media (min-width: 800px) and (min-height: 560px) {
-    #s-battle #fighters { display: block !important; }
+    #s-battle #fighters { display: block !important; z-index: 0; }
     #s-battle .fighter {
       display: none;
-      width: 26%;
-      max-width: 340px;
-      height: 72%;
-      bottom: 11%;
+      width: 20%;
+      max-width: 220px;
+      height: 58%;
+      bottom: 12%;
       top: auto;
       opacity: 1;
+      overflow: hidden;
     }
     #s-battle .fighter.on { display: flex !important; }
     #s-battle .fighter.left { left: 0; justify-content: flex-start; padding-left: 4px; }
@@ -50,9 +51,10 @@
     #s-battle .fighter img {
       height: 100%;
       width: auto;
-      max-width: 100%;
+      max-width: 220px;
       object-fit: contain;
       object-position: center bottom;
+      mix-blend-mode: multiply;
     }
     #s-battle #board-wrap {
       margin: 0 24%;
@@ -393,7 +395,7 @@
   #s-battle.on { display: flex; }
   #s-battle::before {
     content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-    background: linear-gradient(90deg, rgba(8,4,18,0.28) 0%, rgba(8,4,18,0.12) 22%, transparent 42%, rgba(8,4,18,0.18) 78%, rgba(8,4,18,0.35) 100%);
+    background: linear-gradient(90deg, rgba(8,4,18,0.55) 0%, rgba(8,4,18,0.22) 22%, rgba(8,4,18,0.18) 50%, rgba(8,4,18,0.28) 78%, rgba(8,4,18,0.6) 100%);
   }
   #s-battle::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -403,7 +405,7 @@
   #s-battle > * { position: relative; z-index: 1; }
   .side-art { display: none !important; }
   #fighters {
-    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
     background: transparent; overflow: hidden;
   }
   .fighter {
@@ -430,7 +432,7 @@
     transition: opacity 0.12s linear;
   }
   .fighter.right img { transform: scaleX(-1); }
-  #board-wrap, #hud, #dock { z-index: 3; }
+  #board-wrap, #hud, #dock { z-index: 8; }
   .fighter.charge::after {
     content: ""; position: absolute; inset: 18% 22% 22%;
     border-radius: 50%; pointer-events: none;
@@ -3401,13 +3403,13 @@ function flashCpuAct(label) {
       if (side2) { side2.src = p2.img; side2.style.display = ''; }
       const o2 = document.getElementById('orb-p2n');
       if (o2) o2.textContent = '0';
-      document.getElementById('s-battle').style.backgroundImage = 'url("' + (p2.bg || p2.img) + '")';
+      document.getElementById('s-battle').style.backgroundImage = p2.bg ? 'url("' + p2.bg + '")' : 'none';
     } else {
       S.cpu = null;
       document.getElementById('h2chip').style.display = 'none';
       showFighters();
       const s2 = document.getElementById('side-p2'); if (s2) s2.removeAttribute('src');
-      document.getElementById('s-battle').style.backgroundImage = 'url("' + (p1.bg || p1.img) + '")';
+      document.getElementById('s-battle').style.backgroundImage = p1.bg ? 'url("' + p1.bg + '")' : 'none';
     }
     updateSpecial();
     show('battle');
