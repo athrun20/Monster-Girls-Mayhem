@@ -14,20 +14,58 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
   html, body {
-    width: 100%; height: 100%; min-height: 100vh;
+    width: 100%; height: 100%;
+    height: 100dvh; max-height: 100dvh;
     background: var(--bg); color: #fff;
     font-family: system-ui, "Segoe UI", Arial, sans-serif;
     overflow: hidden; overflow-x: hidden;
   }
   #app {
-    max-width: 430px; margin: 0 auto; height: 100%; min-height: 100vh;
+    max-width: 430px; margin: 0 auto;
+    height: 100%; height: 100dvh; max-height: 100dvh;
     position: relative; background: #140a22;
     overflow: hidden; overflow-x: hidden;
   }
   @media (min-width: 800px) {
-    #app { max-width: min(1180px, 100%); }
-    #hud { padding: 4px 10px 0; }
-    #dock { padding: 8px 12px 10px; }
+    #app { max-width: min(1280px, 100%); }
+    #hud { padding: 6px 12px 0; }
+    #dock { padding: 8px 12px 12px; }
+  }
+
+  /* Landscape / tablet / PC: girl — board — girl (current art, swap later) */
+  @media (min-width: 800px) and (min-height: 560px) {
+    #s-battle #fighters { display: block !important; }
+    #s-battle .fighter {
+      display: none;
+      width: 26%;
+      max-width: 340px;
+      height: 72%;
+      bottom: 11%;
+      top: auto;
+      opacity: 1;
+    }
+    #s-battle .fighter.on { display: flex !important; }
+    #s-battle .fighter.left { left: 0; justify-content: flex-start; padding-left: 4px; }
+    #s-battle .fighter.right { right: 0; justify-content: flex-end; padding-right: 4px; }
+    #s-battle .fighter img {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+    }
+    #s-battle #board-wrap {
+      margin: 0 24%;
+      min-height: 0;
+    }
+    #s-battle #hud {
+      padding: 8px 10px 4px;
+    }
+    #s-battle #dock {
+      position: relative;
+      background: linear-gradient(180deg, transparent, rgba(8,4,18,0.55));
+    }
+    #s-battle .chip img { display: block !important; }
   }
   @media (min-width: 900px) and (min-height: 680px) {
     #hud { padding: 2px 10px 0; }
@@ -246,6 +284,52 @@
   }
   #btn-char-back { margin: 0; }
 
+  /* Phone: pin action bars so Chrome/Grok chrome cannot eat TAP / SELECT / SWAP */
+  @media (max-width: 700px) {
+    html, body, #app {
+      height: 100%;
+      height: 100svh;
+      max-height: 100svh;
+    }
+    #s-title {
+      justify-content: space-between;
+      padding: 8px 10px max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    #s-title .art { flex: 1 1 0; min-height: 0; }
+    #s-title img { max-height: 52svh; }
+    #s-title #btn-start {
+      flex-shrink: 0;
+      min-height: 48px;
+      margin-bottom: 0;
+    }
+    #s-mode .panel {
+      padding: 8px 10px max(10px, env(safe-area-inset-bottom, 0px));
+    }
+    #s-char .char-shell {
+      grid-template-rows: auto minmax(0, 1fr) minmax(0, 28vh) auto auto;
+      padding: 6px 8px max(8px, env(safe-area-inset-bottom, 0px));
+      gap: 4px;
+    }
+    .char-preview { max-height: none; }
+    .char-preview img#char-big { max-height: 100%; max-width: 58%; }
+    .char-info { padding: 6px 8px; overflow: auto; max-height: 28vh; }
+    .char-info h3 { font-size: 1.05rem; }
+    .char-info .blurb { font-size: 0.72rem; }
+    .char-actions { flex-shrink: 0; }
+    #btn-char-go { min-height: 46px; }
+    #s-battle #dock {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      z-index: 40;
+      background: linear-gradient(180deg, rgba(10,6,20,0) 0%, rgba(10,6,20,0.94) 28%);
+      padding: 8px 6px max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    }
+    #s-battle #board-wrap {
+      padding-bottom: 78px !important;
+    }
+    #s-battle #pause-fab { z-index: 41; }
+  }
+
   @media (min-width: 800px) {
     #s-char .char-shell {
       grid-template-columns: 220px minmax(0, 1fr) 280px;
@@ -302,6 +386,9 @@
     overflow: hidden;
     display: none;
     flex-direction: column;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
   }
   #s-battle.on { display: flex; }
   #s-battle::before {
@@ -388,8 +475,7 @@
     100% { opacity: 0; transform: scale(1.45); }
   }
   @media (max-width: 700px) {
-    .fighter { width: 20%; height: 34%; top: 42px; bottom: auto; opacity: 0.9; }
-    .fighter img { height: 100%; }
+    .fighter { display: none !important; }
   }
   #hud {
     display: flex; justify-content: space-between; align-items: center; gap: 6px;
@@ -426,10 +512,28 @@
   @media (max-width: 700px) {
     #arena-title { display: none; }
     .chip img, .orb { display: none !important; }
-    .chip { padding: 3px 8px !important; }
+    .chip { padding: 2px 6px !important; }
     .side-art { display: none !important; }
-    .board-frame { padding: 6px !important; }
-    #dock { padding: 4px 8px 8px !important; }
+    #fighters { display: none !important; }
+    .board-frame { padding: 4px !important; }
+    #incoming {
+      position: absolute; left: 0; right: 0; top: 40px;
+      height: 0; overflow: visible; z-index: 6;
+    }
+    #board-wrap {
+      flex: 1 1 0;
+      min-height: 0 !important;
+      padding: 0 4px 2px !important;
+    }
+    #hud { padding: 2px 6px 0 !important; }
+    #dock {
+      flex-shrink: 0;
+      padding: 4px 6px max(8px, env(safe-area-inset-bottom, 0px)) !important;
+    }
+    .dbtn, .dbtn.wide, .dbtn.rise, .dbtn.special {
+      width: 44px; min-width: 44px; height: 42px;
+    }
+    #pause-fab { top: 4px; right: 4px; width: 32px; height: 32px; }
   }
   #arena-title { display: none !important; }
   #arena-title-off {
@@ -486,8 +590,15 @@
     text-shadow: 0 0 10px #f06; opacity: 0; pointer-events: none;
   }
   #danger-tag.on { opacity: 1; }
+  #time-tag {
+    position: absolute; top: 72px; left: 50%; transform: translateX(-50%);
+    z-index: 7; font-size: 0.78rem; font-weight: 900; letter-spacing: 2px;
+    color: #ffe66d; text-shadow: 0 0 12px #ff9a3c; opacity: 0; pointer-events: none;
+    white-space: nowrap;
+  }
+  #time-tag.on { opacity: 1; }
   #board-wrap {
-    flex: 1 1 auto; min-height: 220px; display: flex; align-items: center; justify-content: center;
+    flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center;
     padding: 2px 6px;
     overflow: hidden;
   }
@@ -527,7 +638,7 @@
   #dock {
     flex-shrink: 0;
     background: transparent;
-    padding: 10px 12px 14px;
+    padding: 8px 12px max(10px, env(safe-area-inset-bottom, 0px));
     display: flex; flex-direction: column; align-items: center; gap: 4px;
   }
   .dock-row { display: flex; gap: 12px; justify-content: center; align-items: center; }
@@ -713,6 +824,7 @@
     <div id="cpu-act">ATTACK</div>
     <div id="incoming"></div>
     <div id="danger-tag">DANGER</div>
+    <div id="time-tag">TIME STOP</div>
     <div id="chain">CHAIN 2</div>
     <div id="mayhem-tag">MAYHEM!</div>
     <div id="board-wrap">
@@ -729,6 +841,9 @@
         <button class="dbtn" type="button" id="b-right" aria-label="Right">▶</button>
         <button class="dbtn rise" type="button" id="b-raise" aria-label="Rise"><span>↑</span>RISE</button>
         <button class="dbtn special" type="button" id="b-special" disabled>SPECIAL</button>
+      </div>
+      <div class="dock-row" id="train-dock" style="display:none;margin-top:6px;">
+        <button class="dbtn wide" type="button" id="b-slab">SLAB</button>
       </div>
       <button class="dbtn tiny hidden-ctrl" type="button" id="b-up">▲</button>
       <button class="dbtn tiny hidden-ctrl" type="button" id="b-down">▼</button>
@@ -1020,44 +1135,234 @@
     }
     return n;
   }
-  function crackAdjacent(b, m) {
-    if (!b || !m) return;
-    const masses = garbMassesOn(b);
-    const flipped = [];
-    for (let i = 0; i < masses.length; i++) {
-      const cells = masses[i];
-      let touch = false;
-      for (let j = 0; j < cells.length && !touch; j++) {
-        const r = cells[j].r, c = cells[j].c;
-        const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-        for (let d = 0; d < 4; d++) {
-          const rr = r + dirs[d][0], cc = c + dirs[d][1];
-          if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) continue;
-          if (m[rr][cc] && b[rr][cc] != null && !isGarb(b[rr][cc])) { touch = true; break; }
+  function massTouchedByMatch(cells, b, m) {
+    if (!cells || !cells.length || !m) return false;
+    const set = {};
+    let minC = COLS, maxC = -1, minR = ROWS, maxR = -1;
+    for (let j = 0; j < cells.length; j++) {
+      const r = cells[j].r, c = cells[j].c;
+      set[r + ',' + c] = 1;
+      if (c < minC) minC = c;
+      if (c > maxC) maxC = c;
+      if (r < minR) minR = r;
+      if (r > maxR) maxR = r;
+    }
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (!m[r][c]) continue;
+        if (b[r][c] == null || isGarb(b[r][c])) continue;
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (!dr && !dc) continue;
+            if (set[(r + dr) + ',' + (c + dc)]) return true;
+          }
         }
-      }
-      if (!touch) continue;
-      let maxR = cells[0].r, minR = cells[0].r;
-      for (let j = 0; j < cells.length; j++) {
-        if (cells[j].r > maxR) maxR = cells[j].r;
-        if (cells[j].r < minR) minR = cells[j].r;
-      }
-      const layer = maxR;
-      for (let j = 0; j < cells.length; j++) {
-        if (cells[j].r !== layer) continue;
-        if (!isGarb(b[cells[j].r][cells[j].c])) continue;
-        cellToGem(b, cells[j].r, cells[j].c);
-        flipped.push(cells[j]);
+        if (c >= minC - 1 && c <= maxC + 1 && r >= minR) return true;
       }
     }
-    if (!flipped.length) return;
-    if (b === S.board) {
+    return false;
+  }
+  function xformKey(r, c) { return r + ',' + c; }
+  function isXformingAt(r, c) {
+    const jobs = S.garbXform;
+    if (!jobs || !jobs.length) return false;
+    const k = xformKey(r, c);
+    for (let i = 0; i < jobs.length; i++) {
+      const cells = jobs[i].cells;
+      for (let j = 0; j < cells.length; j++) {
+        if (cells[j].r === r && cells[j].c === c) return jobs[i];
+      }
+    }
+    return false;
+  }
+  function bottomLayerCells(b, cells) {
+    let maxR = -1;
+    const out = [];
+    for (let i = 0; i < cells.length; i++) {
+      const r = cells[i].r, c = cells[i].c;
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+      if (!isGarb(b[r][c])) continue;
+      if (isXformingAt(r, c)) continue;
+      if (r > maxR) maxR = r;
+    }
+    if (maxR < 0) return out;
+    for (let i = 0; i < cells.length; i++) {
+      const r = cells[i].r, c = cells[i].c;
+      if (r !== maxR) continue;
+      if (!isGarb(b[r][c])) continue;
+      if (isXformingAt(r, c)) continue;
+      out.push({ r: r, c: c });
+    }
+    return out;
+  }
+  function pickRevealGem(b, r, c) {
+    const n = nColors();
+    let gem = rollGem(b, r, c, true);
+    if (gem == null || isGarb(gem) || gem < 0 || gem >= n) gem = (r + c) % n;
+    gem = gem | 0;
+    if (gem < 0 || gem >= n || gem >= 100) gem = (r + c) % n;
+    return gem;
+  }
+  function startTimeStop(sec) {
+    const s = Math.max(0.6, sec || 2);
+    const ticks = s * 62.5;
+    S.freeze = Math.max(S.freeze || 0, ticks);
+    S.stop = Math.max(S.stop || 0, ticks);
+    S.cpuStop = Math.max(S.cpuStop || 0, ticks);
+    S.cpuFreeze = Math.max(S.cpuFreeze || 0, ticks);
+    S.garbRecover = Math.max(S.garbRecover || 0, ticks);
+    S.timeStopT = Math.max(S.timeStopT || 0, s * 1000);
+    const el = document.getElementById('time-tag');
+    if (el) {
+      el.textContent = 'TIME STOP';
+      el.classList.add('on');
+    }
+  }
+  function tickTimeStop(dt) {
+    if ((S.timeStopT || 0) > 0) {
+      S.timeStopT -= dt;
+      const el = document.getElementById('time-tag');
+      if (el) {
+        const left = Math.max(0, S.timeStopT / 1000);
+        el.textContent = left > 0.05 ? ('TIME STOP  ' + left.toFixed(1)) : 'TIME STOP';
+        if (S.timeStopT <= 0) el.classList.remove('on');
+      }
+    }
+  }
+  function queueGarbLayer(b, layer, massSize, matchN) {
+    if (!layer || !layer.length) return false;
+    const player = (b === S.board);
+    const cells = [];
+    for (let i = 0; i < layer.length; i++) {
+      const r = layer[i].r, c = layer[i].c;
+      if (!isGarb(b[r][c])) continue;
+      if (isXformingAt(r, c)) continue;
+      cells.push({ r: r, c: c, gem: pickRevealGem(b, r, c), gv: b[r][c] });
+    }
+    if (!cells.length) return false;
+    const job = { player: player, cells: cells, t: 0, dur: 1 };
+    commitGarbLayer(job);
+    if (player) {
       if (!S.garbFx) S.garbFx = [];
-      S.garbFx.push({ c: flipped[0].c, r: flipped[0].r, w: 1, h: 1, t: 0.35, crack: true });
-      S.sp = Math.min(100, S.sp + Math.min(8, 2 + flipped.length));
+      S.garbFx.push({ c: cells[0].c, r: cells[0].r, w: Math.max(1, cells.length), h: 1, t: 0.7, crack: true });
+      sfx('garb');
+      const big = cells.length >= 4 || (massSize | 0) >= 4 || (matchN | 0) >= 4;
+      if (big) startTimeStop(2.2);
+    }
+    return true;
+  }
+  function scheduleNextLayer(b, seeds) {
+    if (!seeds || !seeds.length) return;
+    if (!S.garbNext) S.garbNext = [];
+    S.garbNext.push({
+      player: b === S.board,
+      wait: (b === S.board) ? 820 : 480,
+      seeds: seeds.slice()
+    });
+  }
+  function massFromSeeds(b, seeds) {
+    const masses = garbMassesOn(b);
+    for (let i = 0; i < masses.length; i++) {
+      const set = {};
+      for (let j = 0; j < masses[i].length; j++) set[xformKey(masses[i][j].r, masses[i][j].c)] = 1;
+      for (let k = 0; k < seeds.length; k++) {
+        if (set[xformKey(seeds[k].r, seeds[k].c)]) return masses[i];
+      }
+    }
+    return null;
+  }
+  function commitGarbLayer(job) {
+    const b = job.player ? S.board : S.cpu;
+    if (!b) return;
+    const hits = hitsMap(b);
+    const maxM = maxMap(b);
+    const seeds = [];
+    let n = 0;
+    for (let i = 0; i < job.cells.length; i++) {
+      const r = job.cells[i].r, c = job.cells[i].c;
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+      if (!isGarb(b[r][c])) continue;
+      const pid = unpackG(b[r][c]).pid;
+      delete hits[pid];
+      delete maxM[pid];
+      let gem = job.cells[i].gem;
+      const nc = nColors();
+      if (gem == null || isGarb(gem) || gem < 0 || gem >= nc) gem = pickRevealGem(b, r, c);
+      b[r][c] = gem;
+      n++;
+      if (r > 0 && isGarb(b[r - 1][c])) seeds.push({ r: r - 1, c: c });
+    }
+    if (!n) return;
+    if (job.player) {
+      S.cleared += n;
+      S.sp = Math.min(100, S.sp + Math.min(8, 2 + n));
       setSpUi('p1', S.sp);
       updateSpecial();
-      sfx('garb');
+      S.landPop = 1;
+      beginFall(b);
+    } else {
+      gravity(b);
+    }
+    if (seeds.length) scheduleNextLayer(b, seeds);
+  }
+  function tickGarbXform(dt) {
+    if (S.garbXform && S.garbXform.length) {
+      const keep = [];
+      for (let i = 0; i < S.garbXform.length; i++) {
+        const job = S.garbXform[i];
+        job.t += dt;
+        if (job.t >= job.dur) commitGarbLayer(job);
+        else keep.push(job);
+      }
+      S.garbXform = keep;
+    }
+    if (S.garbNext && S.garbNext.length) {
+      const keepN = [];
+      for (let i = 0; i < S.garbNext.length; i++) {
+        const nx = S.garbNext[i];
+        nx.wait -= dt;
+        if (nx.wait > 0) { keepN.push(nx); continue; }
+        const b = nx.player ? S.board : S.cpu;
+        if (!b) continue;
+        if (nx.player && (S.fallT > 0)) { nx.wait = 80; keepN.push(nx); continue; }
+        const mass = massFromSeeds(b, nx.seeds);
+        if (!mass) continue;
+        const layer = bottomLayerCells(b, mass);
+        queueGarbLayer(b, layer);
+      }
+      S.garbNext = keepN;
+    }
+  }
+  function massIsBusy(cells) {
+    if (!cells) return false;
+    for (let i = 0; i < cells.length; i++) {
+      if (isXformingAt(cells[i].r, cells[i].c)) return true;
+    }
+    if (S.garbNext && S.garbNext.length) {
+      for (let n = 0; n < S.garbNext.length; n++) {
+        const seeds = S.garbNext[n].seeds;
+        if (!seeds) continue;
+        for (let s = 0; s < seeds.length; s++) {
+          for (let i = 0; i < cells.length; i++) {
+            if (cells[i].r === seeds[s].r && cells[i].c === seeds[s].c) return true;
+            if (cells[i].r === seeds[s].r + 1 && cells[i].c === seeds[s].c) return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+  function crackAdjacent(b, m) {
+    if (!b || !m) return;
+    let matchN = 0;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (m[r][c]) matchN++;
+    const masses = garbMassesOn(b);
+    for (let i = 0; i < masses.length; i++) {
+      const cells = masses[i];
+      if (massIsBusy(cells)) continue;
+      if (!massTouchedByMatch(cells, b, m)) continue;
+      const layer = bottomLayerCells(b, cells);
+      queueGarbLayer(b, layer, cells.length, matchN);
     }
   }
   function findMatches(b, applyCrack) {
@@ -1101,6 +1406,11 @@
     const masses = garbMassesOn(b);
     for (let m = 0; m < masses.length; m++) {
       const cells = masses[m];
+      let locked = false;
+      for (let i = 0; i < cells.length; i++) {
+        if (isXformingAt(cells[i].r, cells[i].c)) { locked = true; break; }
+      }
+      if (locked) continue;
       const inMass = {};
       for (let i = 0; i < cells.length; i++) inMass[cells[i].r + ',' + cells[i].c] = 1;
       while (true) {
@@ -1420,6 +1730,28 @@
     if (piece.pat) return placePattern(b, piece.pat, piece.charId);
     return placePattern(b, [{ c: 0, r: 0, w: piece.w || 2, h: piece.h || 1 }], piece.charId);
   }
+  function spawnTrainSlab() {
+    if (S.screen !== 'battle' || S.over || S.paused) return false;
+    if (S.mode !== 'training' || !S.board) return false;
+    const pat = [{ c: 0, r: 0, w: 4, h: 2 }];
+    let ok = placePattern(S.board, pat, garbageOwner());
+    if (!ok) {
+      const old = playableOk;
+      try {
+        playableOk = function () { return true; };
+        ok = placePattern(S.board, [{ c: 0, r: 0, w: 4, h: 1 }], garbageOwner());
+      } finally {
+        playableOk = old;
+      }
+    }
+    if (ok) {
+      sfx('garb');
+      draw();
+    } else {
+      sfx('danger');
+    }
+    return ok;
+  }
 
   function raise(b) {
     for (let c = 0; c < COLS; c++) if (b[0][c] !== null) return false;
@@ -1614,15 +1946,24 @@
     if (danger) return 'DANGER';
     return 'IDLE';
   }
+  function portraitSrc(id) {
+    return (CHARS[id] && CHARS[id].img) || 'assets/ember.jpg';
+  }
   function applyPose(who, pose) {
-    if (charIdOf(who) !== 0) return;
     const img = document.getElementById(who === 'cpu' ? 'ft-p2img' : 'ft-p1img');
     const box = document.getElementById(who === 'cpu' ? 'ft-p2' : 'ft-p1');
     if (!img || !box) return;
-    const src = EMBER_POSES[pose] || EMBER_POSES.IDLE;
-    if (img.getAttribute('data-pose') !== pose) {
-      img.src = src;
-      img.setAttribute('data-pose', pose);
+    const id = charIdOf(who);
+    if (id === 0) {
+      const src = EMBER_POSES[pose] || EMBER_POSES.IDLE;
+      if (img.getAttribute('data-pose') !== pose) {
+        img.src = src;
+        img.setAttribute('data-pose', pose);
+      }
+    } else if (img.getAttribute('data-char') !== String(id)) {
+      img.src = portraitSrc(id);
+      img.setAttribute('data-pose', 'CHAR');
+      img.setAttribute('data-char', String(id));
     }
     box.classList.add('on');
   }
@@ -1659,10 +2000,15 @@
   function showFighters() {
     const a = document.getElementById('ft-p1');
     const b = document.getElementById('ft-p2');
-    if (a) a.classList.toggle('on', charIdOf('p1') === 0);
-    if (b) b.classList.toggle('on', S.mode !== 'training' && charIdOf('cpu') === 0);
-    if (charIdOf('p1') === 0) applyPose('p1', persistPose('p1'));
-    if (S.mode !== 'training' && charIdOf('cpu') === 0) applyPose('cpu', persistPose('cpu'));
+    if (a) {
+      a.classList.add('on');
+      applyPose('p1', persistPose('p1'));
+    }
+    if (b) {
+      const vs = S.mode !== 'training';
+      b.classList.toggle('on', vs);
+      if (vs) applyPose('cpu', persistPose('cpu'));
+    }
   }
   function setHpUi(who, n) {
     n = Math.max(0, Math.min(100, n | 0));
@@ -2392,6 +2738,7 @@ function flashCpuAct(label) {
         const cc = p.c + d[0], rr = p.r + d[1];
         if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return;
         if (seen[rr][cc] || !isGarb(S.board[rr][cc])) return;
+        if (isXformingAt(rr, cc)) return;
         seen[rr][cc] = true;
         q.push({ c: cc, r: rr });
       });
@@ -2485,6 +2832,47 @@ function flashCpuAct(label) {
   }
   function drawGarbBlock(c0, r0, bw, bh, v, off) {
     fillGarbRect(c0 * panel + 1, r0 * panel - off + 1, bw * panel - 2, bh * panel - 2, bw * bh >= 2);
+  }
+  function drawGarbXform(off) {
+    if (!S.garbXform || !S.garbXform.length) return;
+    for (let i = 0; i < S.garbXform.length; i++) {
+      const job = S.garbXform[i];
+      if (!job.player) continue;
+      const u = Math.max(0, Math.min(1, job.t / job.dur));
+      const glow = u < 0.28 ? (u / 0.28) : (u < 0.55 ? 1 : 1 - (u - 0.55) / 0.45);
+      const reveal = u < 0.35 ? 0 : Math.min(1, (u - 0.35) / 0.65);
+      const sweep = (u - 0.18) / 0.38;
+      for (let j = 0; j < job.cells.length; j++) {
+        const cell = job.cells[j];
+        const x = cell.c * panel + 1;
+        const y = cell.r * panel - off + 1;
+        const tw = panel - 2, th = panel - 2;
+        ctx.save();
+        ctx.globalAlpha = 1 - reveal * 0.92;
+        fillGarbRect(x, y, tw, th, false);
+        ctx.restore();
+        if (glow > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.22 + glow * 0.5;
+          const g = ctx.createLinearGradient(x, y, x + tw, y);
+          g.addColorStop(0, 'rgba(255,220,120,0)');
+          g.addColorStop(Math.max(0.05, Math.min(0.95, sweep)), 'rgba(255,245,200,0.95)');
+          g.addColorStop(1, 'rgba(255,120,40,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(x, y, tw, th);
+          ctx.strokeStyle = 'rgba(255,230,160,' + (0.35 + glow * 0.55) + ')';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x + 2, y + 2, tw - 4, th - 4);
+          ctx.restore();
+        }
+        if (reveal > 0) {
+          ctx.save();
+          ctx.globalAlpha = reveal;
+          drawPanel(cell.c * panel, cell.r * panel - off, cell.gem);
+          ctx.restore();
+        }
+      }
+    }
   }
   function round(x, y, w, h, r) {
     ctx.beginPath();
@@ -2818,10 +3206,12 @@ function flashCpuAct(label) {
         drawPanel(c * panel, r * panel - off + fy, v);
         continue;
       }
+      if (isXformingAt(r, c)) { seenG[r][c] = true; continue; }
       if (seenG[r][c]) continue;
       const mass = collectGarbMass(c, r, seenG);
       drawGarbMass(mass, off);
     }
+    drawGarbXform(off);
     drawFx(off);
     // two-cell cursor: same grid + rise offset as gems
     const cr = Math.max(0, Math.min(ROWS - 1, S.cur.r | 0));
@@ -2887,7 +3277,7 @@ function flashCpuAct(label) {
       } else if (S.riseQueued && S.fallT <= 0) {
         S.riseQueued = false;
         startManualRise();
-      } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0) {
+      } else if (S.mode !== 'training' && S.freeze <= 0 && S.stop <= 0 && (S.riseCool || 0) <= 0 && !(S.garbXform && S.garbXform.length)) {
         S.rising += currentRise() * (dt / 16);
         if (S.rising >= 1) {
           S.rising = 0;
@@ -2900,6 +3290,8 @@ function flashCpuAct(label) {
         for (let i = 0; i < S.garbBreak.length; i++) S.garbBreak[i].t -= dt;
         resolveGarbBreak(false);
       }
+      tickGarbXform(dt);
+      tickTimeStop(dt);
       if (S.fallT > 0 && S.fallY) {
         S.fallT -= dt / 70;
         const tfall = Math.max(0, S.fallT);
@@ -2974,10 +3366,12 @@ function flashCpuAct(label) {
     S.stop = 0; S.chain = 0; S.maxChain = 0; S.cleared = 0; S.sp = 0;
     S.over = false; S.won = false; S.paused = false;
     S.pHp = 100; S.cpuHp = 100; setHpUi('p1', 100); setHpUi('cpu', 100);
-    S.pendingIn = []; S.pendingOut = []; S.incomingHold = null; S.incomingWait = 0; S.fx = []; S.parts = []; S.trails = []; S.lastClear = null; S.shake = 0; S.fallY = null; S.fallT = 0; S.cascade = false; S.floats = []; S.garbFx = []; S.garbBreak = []; S.garbHits = {}; S.cpuGarbHits = {}; S.garbMax = {}; S.cpuGarbMax = {}; S.lastGarbCol = -1; S.cpuLastGarbCol = -1; S.spReadyLatched = false; S.pMood = 'IDLE'; S.cpuMood = 'IDLE';
+    S.pendingIn = []; S.pendingOut = []; S.incomingHold = null; S.incomingWait = 0; S.fx = []; S.parts = []; S.trails = []; S.lastClear = null; S.shake = 0; S.fallY = null; S.fallT = 0; S.cascade = false; S.floats = []; S.garbFx = []; S.garbBreak = []; S.garbXform = []; S.garbNext = []; S.garbHits = {}; S.cpuGarbHits = {}; S.garbMax = {}; S.cpuGarbMax = {}; S.lastGarbCol = -1; S.cpuLastGarbCol = -1; S.spReadyLatched = false; S.pMood = 'IDLE'; S.cpuMood = 'IDLE';
     S.freeze = 0; S.cpuFreeze = 0;
     S.aiT = 0; S.aiPhase = 'think'; S.aiTarget = null;
 
+    const trainDock = document.getElementById('train-dock');
+    if (trainDock) trainDock.style.display = S.mode === 'training' ? 'flex' : 'none';
     S.p1 = clampChar(S.playerChar != null ? S.playerChar : S.p1, 0);
     S.p2 = clampChar(S.cpuChar != null ? S.cpuChar : S.p2, notEmberDefault(S.p1));
     const p1 = CHARS[S.p1];
@@ -3231,6 +3625,7 @@ function flashCpuAct(label) {
   bind('b-swap', doSwap);
   bind('b-raise', doRaise);
   bind('b-special', () => { if (!S.paused) fireSpecial(true); });
+  bind('b-slab', spawnTrainSlab);
   function setPaused(on) {
     S.paused = !!on;
     const ov = document.getElementById('pause-ov');
@@ -3252,6 +3647,7 @@ function flashCpuAct(label) {
     if (k === 'z' || k === ' ' || k === 'x') { doSwap(); e.preventDefault(); }
     if (k === 'c' || k === 'r' || k === 'R' || k === 'Shift') { doRaise(); e.preventDefault(); }
     if (k === 'v' || k === 'Enter') { fireSpecial(true); e.preventDefault(); }
+    if (k === 'g' || k === 'G') { spawnTrainSlab(); e.preventDefault(); }
   });
 
   let pointer0 = null;
