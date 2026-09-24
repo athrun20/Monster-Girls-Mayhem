@@ -1951,22 +1951,7 @@
     return (CHARS[id] && CHARS[id].img) || 'assets/ember.jpg';
   }
   function applyPose(who, pose) {
-    const img = document.getElementById(who === 'cpu' ? 'ft-p2img' : 'ft-p1img');
-    const box = document.getElementById(who === 'cpu' ? 'ft-p2' : 'ft-p1');
-    if (!img || !box) return;
-    const id = charIdOf(who);
-    if (id === 0) {
-      const src = EMBER_POSES[pose] || EMBER_POSES.IDLE;
-      if (img.getAttribute('data-pose') !== pose) {
-        img.src = src;
-        img.setAttribute('data-pose', pose);
-      }
-    } else if (img.getAttribute('data-char') !== String(id)) {
-      img.src = portraitSrc(id);
-      img.setAttribute('data-pose', 'CHAR');
-      img.setAttribute('data-char', String(id));
-    }
-    box.classList.add('on');
+    return;
   }
   function setPose(who, pose, hold, nextPose, nextHold) {
     if (charIdOf(who) !== 0) return;
@@ -3377,7 +3362,7 @@ function flashCpuAct(label) {
     document.getElementById('h1name').textContent = p1.name.toUpperCase();
     setSpUi('p1', 0);
     const side1 = document.getElementById('side-p1');
-    if (side1) side1.src = p1.img;
+    if (side1) { side1.removeAttribute('src'); side1.style.display = 'none'; }
     const o1 = document.getElementById('orb-p1n');
     if (o1) o1.textContent = '0';
     S.pPose = 'IDLE'; S.cpuPose = 'IDLE'; S.pPoseHold = 0; S.cpuPoseHold = 0;
@@ -3396,7 +3381,7 @@ function flashCpuAct(label) {
       document.getElementById('h2chip').style.display = 'flex';
       showFighters();
       const side2 = document.getElementById('side-p2');
-      if (side2) { side2.src = p2.img; side2.style.display = ''; }
+      if (side2) { side2.removeAttribute('src'); side2.style.display = 'none'; }
       const o2 = document.getElementById('orb-p2n');
       if (o2) o2.textContent = '0';
       document.getElementById('s-battle').style.backgroundImage = 'url("assets/Ember-stage.jpg")';
