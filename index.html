@@ -45,7 +45,7 @@
       opacity: 1;
       overflow: hidden;
     }
-    #s-battle .fighter.on { display: flex !important; }
+    #s-battle .fighter.on { display: none !important; }
     #s-battle .fighter.left { left: 0; justify-content: flex-start; padding-left: 4px; }
     #s-battle .fighter.right { right: 0; justify-content: flex-end; padding-right: 4px; }
     #s-battle .fighter img {
@@ -383,8 +383,8 @@
   /* BATTLE */
   #s-battle {
     padding: 0;
-    background: #0a0614 center center / cover no-repeat;
-    background-color: #0a0614;
+    background: #0a0614 url("assets/Ember-stage.jpg") center center / cover no-repeat !important;
+    background-color: #0a0614 !important;
     overflow: hidden;
     display: none;
     flex-direction: column;
@@ -404,9 +404,8 @@
   }
   #s-battle > * { position: relative; z-index: 1; }
   .side-art { display: none !important; }
-  #fighters {
-    position: absolute; inset: 0; z-index: 0; pointer-events: none;
-    background: transparent; overflow: hidden;
+  #fighters, .fighter, .fighter.on, .side-art {
+    display: none !important;
   }
   .fighter {
     position: absolute; bottom: 8%;
@@ -2002,15 +2001,12 @@
   function showFighters() {
     const a = document.getElementById('ft-p1');
     const b = document.getElementById('ft-p2');
-    if (a) {
-      a.classList.add('on');
-      applyPose('p1', persistPose('p1'));
-    }
-    if (b) {
-      const vs = S.mode !== 'training';
-      b.classList.toggle('on', vs);
-      if (vs) applyPose('cpu', persistPose('cpu'));
-    }
+    if (a) a.classList.remove('on');
+    if (b) b.classList.remove('on');
+    const i1 = document.getElementById('ft-p1img');
+    const i2 = document.getElementById('ft-p2img');
+    if (i1) { i1.removeAttribute('src'); i1.removeAttribute('data-pose'); }
+    if (i2) { i2.removeAttribute('src'); i2.removeAttribute('data-pose'); }
   }
   function setHpUi(who, n) {
     n = Math.max(0, Math.min(100, n | 0));
@@ -3403,13 +3399,13 @@ function flashCpuAct(label) {
       if (side2) { side2.src = p2.img; side2.style.display = ''; }
       const o2 = document.getElementById('orb-p2n');
       if (o2) o2.textContent = '0';
-      document.getElementById('s-battle').style.backgroundImage = p2.bg ? 'url("' + p2.bg + '")' : 'none';
+      document.getElementById('s-battle').style.backgroundImage = 'url("assets/Ember-stage.jpg")';
     } else {
       S.cpu = null;
       document.getElementById('h2chip').style.display = 'none';
       showFighters();
       const s2 = document.getElementById('side-p2'); if (s2) s2.removeAttribute('src');
-      document.getElementById('s-battle').style.backgroundImage = p1.bg ? 'url("' + p1.bg + '")' : 'none';
+      document.getElementById('s-battle').style.backgroundImage = 'url("assets/Ember-stage.jpg")';
     }
     updateSpecial();
     show('battle');
